@@ -39,6 +39,26 @@ class Comandos(commands.Cog):
             await inter.channel.send("belezinha")
 
 
+    @commands.slash_command(name="help", description="Lista de comandos")
+    async def help(self, inter : disnake.ApplicationCommandInteraction):
+        await inter.response.defer()
+        
+        embed = disnake.Embed(
+            title="Lista de comandos",
+            colour=disnake.Colour.blue()
+        )
+        
+        comandos = list(self.client.slash_commands)
+        comandos.sort(key=lambda x: x.name)
+        for comando in comandos:
+            embed.add_field(
+                name=f"/{comando.name}",
+                value=comando.description,
+                inline=False
+            )
+        
+        await inter.edit_original_message(embed=embed)
+    
     @commands.slash_command(name="ans", description="Mostra a lista de aniversariantes, podendo escolher o mês")
     async def ans(self, inter : disnake.ApplicationCommandInteraction, mes : int = None):
         await inter.response.defer()

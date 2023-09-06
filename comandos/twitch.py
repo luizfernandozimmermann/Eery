@@ -59,15 +59,17 @@ class Twitch(commands.Cog):
             headers=headers
         )
         data = response.json()
-        
-        if data["data"] != []:
-            if data["data"][0]["type"] != "live" or str(id_membro) in self.pessoas_em_live:
-                return
-            self.pessoas_em_live.append(str(id_membro))
-            await self.client.channel_geral.send(f"<@{id_membro}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{twitch_streamer}")
-        
-        elif str(id_membro) in self.pessoas_em_live:
-            self.pessoas_em_live.remove(str(id_membro))
+        try:
+            if data["data"] != []:
+                if data["data"][0]["type"] != "live" or str(id_membro) in self.pessoas_em_live:
+                    return
+                self.pessoas_em_live.append(str(id_membro))
+                await self.client.channel_geral.send(f"<@{id_membro}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{twitch_streamer}")
+            
+            elif str(id_membro) in self.pessoas_em_live:
+                self.pessoas_em_live.remove(str(id_membro))
+        except:
+            pass
         
         
 def setup(client: commands.Bot):

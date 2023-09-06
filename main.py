@@ -66,7 +66,6 @@ async def send_message():
                     await client.channel_geral.send("<@" + key + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
                     break
 
-client.on_slash_command_error
 @client.event
 async def on_slash_command_error(inter : disnake.ApplicationCommandInteraction, 
                                  exception : commands.CommandError):
@@ -91,21 +90,21 @@ async def on_ready():
     client.channel_teste = client.get_channel(1054167826937688067)
 
 @client.event
-async def on_message(inter : commands.Context):
-    if client.user.mentioned_in(inter):
+async def on_message(message : disnake.message.Message):
+    if client.user.mentioned_in(message):
         data = datetime.now(timezone.utc)
         hora = data.hour - 3
-        autor = inter.author.id
+        autor = message.author.id
 
-        if 7 <= hora < 13 and "bom dia" in inter.content.lower() and autor != client.user.id:
-            await inter.channel.send("<@" + str(autor) + "> Bom dia !!!")
-        elif 13 <= hora < 19 and "boa tarde" in inter.content.lower() and autor != client.user.id:
-            await inter.channel.send("<@" + str(autor) + "> Boa tarde !!!")
-        elif "boa noite" in inter.content.lower() and autor != client.user.id:
-            await inter.channel.send("<@" + str(autor) + "> Boa noite !!!")
+        if 7 <= hora < 13 and "bom dia" in message.content.lower() and autor != client.user.id:
+            await message.channel.send("<@" + str(autor) + "> Bom dia !!!")
+        elif 13 <= hora < 19 and "boa tarde" in message.content.lower() and autor != client.user.id:
+            await message.channel.send("<@" + str(autor) + "> Boa tarde !!!")
+        elif "boa noite" in message.content.lower() and autor != client.user.id:
+            await message.channel.send("<@" + str(autor) + "> Boa noite !!!")
 
-        if "feliz ano novo" in inter.content.lower():
-            await inter.channel.send("<@" + str(autor) + "> Feliz ano novo para você !!! Espero que você tenha um ótimo 2012!!!")
+        if "feliz ano novo" in message.content.lower():
+            await message.channel.send("<@" + str(autor) + "> Feliz ano novo para você !!! Espero que você tenha um ótimo 2012!!!")
     
     reacoes = {
         "mey": '\U00002764',
@@ -119,15 +118,16 @@ async def on_message(inter : commands.Context):
     }
     
     for chave, reacao in reacoes.items():
-        if chave in inter.content.lower():
-            await inter.add_reaction(reacao)
+        if chave in message.content.lower():
+            await message.add_reaction(reacao)
     
     # vxtwitter
-    matches = re.match(r"(https://twitter.com/.*?/status/\w*)", inter.content)
-    if matches != None and inter.author.id != client.user.id:
-        await inter.reply(matches.groups()[0].replace("twitter", "vxtwitter"))
+    matches = re.match(r"(https://twitter.com/.*?/status/\w*)", message.content)
+    if matches != None and message.author.id != client.user.id:
+        await message.channel.send(f'<@{message.author.id}>:\n{matches.groups()[0].replace("twitter", "vxtwitter")}')
+        await message.delete()
         
-    await client.process_commands(inter)
+    await client.process_commands(message)
 
 @client.event
 async def on_member_join(member : disnake.User):
