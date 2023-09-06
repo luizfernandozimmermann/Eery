@@ -1,0 +1,5 @@
+*.json
+*.txt
+*.config
+testes.py
+__pycache__
