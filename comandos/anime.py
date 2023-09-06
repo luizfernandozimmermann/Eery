@@ -20,6 +20,10 @@ class Anime(commands.Cog):
                     anime : str = None, episodio : int = None) :
         await inter.response.defer(ephemeral=True)
         
+        if inter.user != inter.user:
+            await inter.edit_original_message("Comando em construção ainda :)")
+            return
+        
         anime_view = self.AnimeView(anime, inter.user, episodio)
         
         if anime != None:
