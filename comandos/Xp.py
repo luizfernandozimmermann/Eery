@@ -157,7 +157,7 @@ class Xp(commands.Cog):
         if type(usuario) == int:
             usuario = self.bot.get_user(usuario)
         
-        if usuario.id not in [self.bot.owner.id, inter.guild.owner.id]:
+        if inter.user.id not in [self.bot.owner.id, inter.guild.owner.id]:
             return
         
         membros = carregar()
