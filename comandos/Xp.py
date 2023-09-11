@@ -116,12 +116,24 @@ class Xp(commands.Cog):
     def __init__(self, bot : commands.Bot):
         self.bot = bot
         
+    @commands.command(name="resetxp")
+    async def resetxp(self, ctx: commands.Context):
+        if ctx.author.id != self.bot.owner.id:
+            return
+        
+        membros = carregar()
+        for id, conteudo in membros.items():
+            membros[id]["xp"] = 0
+            
+        salvar(membros)
+        await ctx.send("AGORA DEU O CARAIO MEMO VIU, RESETOU FOI TUDO, RESETOU A PORRA TODA")
+    
     @commands.command(name="setlvl")
-    async def setlvl(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User | int, level : int):
+    async def setlvl(self, ctx : commands.Context, usuario : disnake.User | int, level : int):
         if type(usuario) == int:
             usuario = self.bot.get_user(usuario)
         
-        if usuario.id not in [self.bot.owner.id, inter.guild.owner.id]:
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
         xp = 0
@@ -136,35 +148,35 @@ class Xp(commands.Cog):
         membros[str(usuario.id)]["xp"] = xp
         salvar(membros)
         
-        await inter.send("Feito!")
+        await ctx.send("Feito!")
     
     @commands.command(name="setxp")
-    async def setxp(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User | int, quantidade : int):
+    async def setxp(self, ctx : disnake.ApplicationCommandInteraction, usuario : disnake.User | int, quantidade : int):
         if type(usuario) == int:
             usuario = self.bot.get_user(usuario)
         
-        if usuario.id not in [self.bot.owner.id, inter.guild.owner.id]:
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
         membros = carregar()
         membros[str(usuario.id)]["xp"] = quantidade
         salvar(membros)
         
-        await inter.send("Feito!")
+        await ctx.send("Feito!")
         
     @commands.command(name="addxp")
-    async def addxp(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User | int, quantidade : int):
+    async def addxp(self, ctx : disnake.ApplicationCommandInteraction, usuario : disnake.User | int, quantidade : int):
         if type(usuario) == int:
             usuario = self.bot.get_user(usuario)
         
-        if inter.user.id not in [self.bot.owner.id, inter.guild.owner.id]:
+        if ctx.user.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
         membros = carregar()
         membros[str(usuario.id)]["xp"] += quantidade
         salvar(membros)
         
-        await inter.send("Feito!")
+        await ctx.send("Feito!")
     
     @commands.slash_command(name="xp", description="Veja seu XP")
     async def xp(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User = None):
