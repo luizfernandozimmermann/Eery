@@ -3,6 +3,7 @@ from disnake.ext import commands, tasks
 import re
 from datetime import datetime, timezone
 from random import randint
+from comandos.Xp import obter_level
 from save_and_load import *
 
 
@@ -13,10 +14,15 @@ client.load_extensions("comandos")
 usuarios_que_mandaram_mensagem = []
 
 @tasks.loop(seconds=59)
-async def send_message():
+async def loop_1m():
     membros = carregar()
+    canal_lvl_up = client.get_channel(842915047042449450)
     for id_usuario in usuarios_que_mandaram_mensagem:
+        lvl_anterior = obter_level(membros[str(id_usuario)]["xp"])
         membros[str(id_usuario)]["xp"] += randint(15, 25)
+        lvl_posterior = obter_level(membros[str(id_usuario)]["xp"])
+        if lvl_anterior != lvl_posterior:
+            await canal_lvl_up.send(f"<@{id_usuario}> acaba de upar para o level {lvl_posterior}!")
     salvar(membros)
     
     horario = datetime.now(timezone.utc)
@@ -86,7 +92,7 @@ async def on_slash_command_error(inter : disnake.ApplicationCommandInteraction,
 
 @client.event
 async def on_ready():
-    send_message.start()
+    loop_1m.start()
     
     membros = carregar()
     deletar = []
