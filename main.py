@@ -110,7 +110,7 @@ async def on_ready():
 @client.event
 async def on_message(message : disnake.message.Message):
     if message.author != client.user.id:
-        if message.author.id not in usuarios_que_mandaram_mensagem:
+        if message.author.id not in usuarios_que_mandaram_mensagem and not message.author.bot:
             usuarios_que_mandaram_mensagem.append(message.author.id)
         
         if client.user.mentioned_in(message):
