@@ -227,7 +227,7 @@ class Xp(commands.Cog):
         async def on_error(self, error: Exception, item: disnake.ui.Item, inter: disnake.MessageInteraction):
             await inter.response.edit_message(embed=self.montar_embed(), view=self, file=self.imagem)
             
-        async def atualizar_mensagem(self, inter : disnake.MessageInteraction):
+        async def atualizar_mensagem(self, button: disnake.ui.Button, inter : disnake.MessageInteraction):
             await inter.response.edit_message(embed=self.montar_embed(), view=self, file=self.imagem)
                 
         def montar_embed(self):
@@ -263,7 +263,7 @@ class Xp(commands.Cog):
             if self.pagina == 1:
                 self.pagina_anterior.disabled = True
             
-            await self.atualizar_mensagem(inter)
+            await self.atualizar_mensagem(button, inter)
         
         @disnake.ui.button(label=">", style=disnake.ButtonStyle.blurple)
         async def pagina_posterior(self, button : disnake.ui.Button, inter : disnake.MessageInteraction):
@@ -273,7 +273,7 @@ class Xp(commands.Cog):
             if self.pagina == self.maximo_paginas:
                 self.pagina_posterior.disabled = True
             
-            await self.atualizar_mensagem(inter)
+            await self.atualizar_mensagem(button, inter)
 
 
 def setup(bot : commands.Bot):
