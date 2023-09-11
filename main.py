@@ -9,15 +9,16 @@ from save_and_load import *
 intents = disnake.Intents.all()
 client = commands.Bot(command_prefix="!", intents=intents)
 
-client.load_extension("comandos.anime")
-client.load_extension("comandos.jogo")
-client.load_extension("comandos.perfil")
-client.load_extension("comandos.twitch")
-client.load_extension("comandos.comandos")
-
+client.load_extensions("comandos")
+usuarios_que_mandaram_mensagem = []
 
 @tasks.loop(seconds=59)
 async def send_message():
+    membros = carregar()
+    for id_usuario in usuarios_que_mandaram_mensagem:
+        membros[str(id_usuario)]["xp"] += randint(15, 25)
+    salvar(membros)
+    
     horario = datetime.now(timezone.utc)
     minuto = horario.minute
     hora = horario.hour - 3
@@ -86,47 +87,62 @@ async def on_slash_command_error(inter : disnake.ApplicationCommandInteraction,
 @client.event
 async def on_ready():
     send_message.start()
+    
+    membros = carregar()
+    deletar = []
+    for id, conteudo in membros.items():
+        usuario = client.get_user(int(id))
+        if usuario == None:
+            deletar.append(id)
+    for id in deletar:
+        del membros[id]
+    salvar(membros)    
+    
     client.channel_geral = client.get_channel(842921629054271518)
     client.channel_teste = client.get_channel(1054167826937688067)
 
 @client.event
 async def on_message(message : disnake.message.Message):
-    if client.user.mentioned_in(message):
-        data = datetime.now(timezone.utc)
-        hora = data.hour - 3
-        autor = message.author.id
-
-        if 7 <= hora < 13 and "bom dia" in message.content.lower() and autor != client.user.id:
-            await message.channel.send("<@" + str(autor) + "> Bom dia !!!")
-        elif 13 <= hora < 19 and "boa tarde" in message.content.lower() and autor != client.user.id:
-            await message.channel.send("<@" + str(autor) + "> Boa tarde !!!")
-        elif "boa noite" in message.content.lower() and autor != client.user.id:
-            await message.channel.send("<@" + str(autor) + "> Boa noite !!!")
-
-        if "feliz ano novo" in message.content.lower():
-            await message.channel.send("<@" + str(autor) + "> Feliz ano novo para você !!! Espero que você tenha um ótimo 2012!!!")
-    
-    reacoes = {
-        "mey": '\U00002764',
-        "ruan": '\U0001F308',
-        "olavo": '\U0001F480',
-        "sasa": ':sasadaph:1056344897919123506',
-        "sasa": ':sasadaph:1056344897919123506',
-        "vitin": '\U0001F48B',
-        "727": ':wysi:997606675576016956',
-        "bananinho": '\U0001F34C'
-    }
-    
-    for chave, reacao in reacoes.items():
-        if chave in message.content.lower():
-            await message.add_reaction(reacao)
-    
-    # vxtwitter
-    matches = re.match(r"(https://twitter.com/.*?/status/\w*)", message.content)
-    if matches != None and message.author.id != client.user.id:
-        await message.channel.send(f'<@{message.author.id}>:\n{matches.groups()[0].replace("twitter", "vxtwitter")}')
-        await message.delete()
+    if message.author != client.user.id:
+        if message.author.id not in usuarios_que_mandaram_mensagem:
+            usuarios_que_mandaram_mensagem.append(message.author.id)
         
+        if client.user.mentioned_in(message):
+            data = datetime.now(timezone.utc)
+            hora = data.hour - 3
+            autor = message.author.id
+
+            if 7 <= hora < 13 and "bom dia" in message.content.lower():
+                await message.channel.send("<@" + str(autor) + "> Bom dia !!!")
+            elif 13 <= hora < 19 and "boa tarde" in message.content.lower():
+                await message.channel.send("<@" + str(autor) + "> Boa tarde !!!")
+            elif "boa noite" in message.content.lower():
+                await message.channel.send("<@" + str(autor) + "> Boa noite !!!")
+
+            if "feliz ano novo" in message.content.lower():
+                await message.channel.send("<@" + str(autor) + "> Feliz ano novo para você !!! Espero que você tenha um ótimo 2012!!!")
+        
+        reacoes = {
+            "mey": '\U00002764',
+            "ruan": '\U0001F308',
+            "olavo": '\U0001F480',
+            "sasa": ':sasadaph:1056344897919123506',
+            "sasa": ':sasadaph:1056344897919123506',
+            "vitin": '\U0001F48B',
+            "727": ':wysi:997606675576016956',
+            "bananinho": '\U0001F34C'
+        }
+        
+        for chave, reacao in reacoes.items():
+            if chave in message.content.lower():
+                await message.add_reaction(reacao)
+        
+        # vxtwitter
+        matches = re.match(r"(https://twitter.com/.*?/status/\w*)", message.content)
+        if matches != None:
+            await message.channel.send(f'<@{message.author.id}>:\n{matches.groups()[0].replace("twitter", "vxtwitter")}')
+            await message.delete()
+            
     await client.process_commands(message)
 
 @client.event
@@ -148,7 +164,6 @@ async def on_member_join(member : disnake.User):
                 "bruno_points": 0
             }
         salvar(membros)
-
 
 key = carregar("keys")["key"]
 client.run(key)
