@@ -151,7 +151,7 @@ class Xp(commands.Cog):
         await ctx.send("Feito!")
     
     @commands.command(name="setxp")
-    async def setxp(self, ctx : disnake.ApplicationCommandInteraction, usuario : disnake.User | int, quantidade : int):
+    async def setxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
         if type(usuario) == int:
             usuario = self.bot.get_user(usuario)
         
@@ -165,11 +165,11 @@ class Xp(commands.Cog):
         await ctx.send("Feito!")
         
     @commands.command(name="addxp")
-    async def addxp(self, ctx : disnake.ApplicationCommandInteraction, usuario : disnake.User | int, quantidade : int):
+    async def addxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
         if type(usuario) == int:
             usuario = self.bot.get_user(usuario)
         
-        if ctx.user.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
         membros = carregar()

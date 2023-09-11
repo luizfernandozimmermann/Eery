@@ -18,9 +18,9 @@ async def loop_1m():
     membros = carregar()
     canal_lvl_up = client.get_channel(842915047042449450)
     for id_usuario in usuarios_que_mandaram_mensagem:
-        lvl_anterior = obter_level(membros[str(id_usuario)]["xp"])
+        lvl_anterior = obter_level(membros[str(id_usuario)]["xp"])[0]
         membros[str(id_usuario)]["xp"] += randint(15, 25)
-        lvl_posterior = obter_level(membros[str(id_usuario)]["xp"])
+        lvl_posterior = obter_level(membros[str(id_usuario)]["xp"])[0]
         if lvl_anterior != lvl_posterior:
             await canal_lvl_up.send(f"<@{id_usuario}> acaba de upar para o level {lvl_posterior}!")
     salvar(membros)
