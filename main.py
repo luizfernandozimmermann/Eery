@@ -12,6 +12,7 @@ client = commands.Bot(command_prefix="!", intents=intents)
 
 client.load_extensions("comandos")
 usuarios_que_mandaram_mensagem = []
+xp_ativo = False
 
 @tasks.loop(seconds=59)
 async def loop_1m():
@@ -24,6 +25,7 @@ async def loop_1m():
         if lvl_anterior != lvl_posterior:
             await canal_lvl_up.send(f"<@{id_usuario}> acaba de upar para o level {lvl_posterior}!")
     salvar(membros)
+    usuarios_que_mandaram_mensagem = []
     
     horario = datetime.now(timezone.utc)
     minuto = horario.minute
@@ -110,8 +112,9 @@ async def on_ready():
 @client.event
 async def on_message(message : disnake.message.Message):
     if message.author != client.user.id:
-        if message.author.id not in usuarios_que_mandaram_mensagem and not message.author.bot:
-            usuarios_que_mandaram_mensagem.append(message.author.id)
+        if xp_ativo:
+            if message.author.id not in usuarios_que_mandaram_mensagem and not message.author.bot:
+                usuarios_que_mandaram_mensagem.append(message.author.id)
         
         if client.user.mentioned_in(message):
             data = datetime.now(timezone.utc)
@@ -144,11 +147,16 @@ async def on_message(message : disnake.message.Message):
                 await message.add_reaction(reacao)
         
         # vxtwitter
-        matches = re.match(r"(https://twitter.com/.*?/status/\w*)", message.content)
-        if matches != None:
-            await message.channel.send(f'<@{message.author.id}>:\n{matches.groups()[0].replace("twitter", "vxtwitter")}')
+        matches_twitter = re.match(r"(https://twitter.com/.*?/status/\w*)", message.content)
+        matches_x = re.match(r"(https://x.com/.*?/status/\w*)", message.content)
+        if matches_twitter != None:
+            await message.channel.send(f'<@{message.author.id}>:\n{matches_twitter.groups()[0].replace("twitter", "vxtwitter")}')
             await message.delete()
-            
+        
+        elif matches_x != None:
+            await message.channel.send(f'<@{message.author.id}>:\n{matches_x.groups()[0].replace("x.com", "fixupx.com")}')
+            await message.delete()
+        
     await client.process_commands(message)
 
 @client.event
