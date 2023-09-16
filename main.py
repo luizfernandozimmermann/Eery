@@ -32,7 +32,7 @@ async def loop_1m():
     hora = horario.hour - 3
     if hora < 0:
         hora = 24 + hora
-    # uniao sinistra
+    
     if minuto == 00:
         aleatorio = randint(0,4)
         if hora == 7:
@@ -66,7 +66,6 @@ async def loop_1m():
             await client.channel_geral.send("Boa noite!!!\n" + imagens_link[aleatorio])
 
         elif hora == 8:
-            membros = carregar()
             dia = datetime.now(timezone.utc)
             mes = '%02d' % dia.month
             dia = '%02d' % dia.day
