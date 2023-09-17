@@ -1,5 +1,6 @@
 import asyncio
 import json
+from random import randint
 import re
 import disnake
 from disnake.ext import commands
@@ -38,6 +39,10 @@ class Comandos(commands.Cog):
             salvar(membros)
             await inter.channel.send("belezinha")
 
+    
+    @commands.slash_command(name="roll", description="Gera um número aleatório")
+    async def roll(self, inter : disnake.ApplicationCommandInteraction, max : int = 100):
+        await inter.response.send_message(f"{inter.user.display_name} rolou o número {randint(0, max)}")
 
     @commands.slash_command(name="help", description="Lista de comandos")
     async def help(self, inter : disnake.ApplicationCommandInteraction):
