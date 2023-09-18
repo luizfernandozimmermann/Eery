@@ -8,24 +8,33 @@ from save_and_load import *
 
 
 intents = disnake.Intents.all()
-client = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-client.load_extensions("comandos")
-usuarios_que_mandaram_mensagem = []
-xp_ativo = False
+bot.load_extensions("comandos")
+bot.adicionar_xp = {}
+
+bot.configs = carregar("configs")
+
+id_canais = carregar("id_canais")
 
 @tasks.loop(seconds=59)
 async def loop_1m():
     membros = carregar()
-    canal_lvl_up = client.get_channel(842915047042449450)
-    for id_usuario in usuarios_que_mandaram_mensagem:
-        lvl_anterior = obter_level(membros[str(id_usuario)]["xp"])[0]
-        membros[str(id_usuario)]["xp"] += randint(15, 25)
-        lvl_posterior = obter_level(membros[str(id_usuario)]["xp"])[0]
+    canal_lvl_up = bot.get_channel(id_canais["xp"])
+    
+    for id_usuario, valor_xp in bot.adicionar_xp.items():
+        xp = membros[str(id_usuario)]["xp"]
+        
+        lvl_anterior = obter_level(xp)[0]
+        xp += randint(int(15 * valor_xp), int(25 * valor_xp))
+        lvl_posterior = obter_level(xp)[0]
+        
+        membros[str(id_usuario)]["xp"] = xp
         if lvl_anterior != lvl_posterior:
             await canal_lvl_up.send(f"<@{id_usuario}> acaba de upar para o level {lvl_posterior}!")
+            
     salvar(membros)
-    usuarios_que_mandaram_mensagem = []
+    bot.adicionar_xp = {}
     
     horario = datetime.now(timezone.utc)
     minuto = horario.minute
@@ -43,7 +52,7 @@ async def loop_1m():
                 "https://cdn.discordapp.com/attachments/1054167826937688067/1055609968230932620/bomdia_4.jpg",
                 "https://cdn.discordapp.com/attachments/1054167826937688067/1055609966804860948/bomdia_5.jpg"
             ]
-            await client.channel_geral.send("Bom dia!!!\n" + imagens_link[aleatorio])
+            await bot.channel_geral.send("Bom dia!!!\n" + imagens_link[aleatorio])
         
         elif hora == 13:
             imagens_link = [
@@ -53,7 +62,7 @@ async def loop_1m():
                 "https://i0.wp.com/emotioncard.com.br/wp-content/uploads/2017/07/179.jpg?w=632&ssl=1",
                 "https://i0.wp.com/emotioncard.com.br/wp-content/uploads/2017/07/2016-Abril-28-Boa-tarde-IMG-2.jpg?w=720&ssl=1"
             ]
-            await client.channel_geral.send("Boa tarde!\n" + imagens_link[aleatorio])
+            await bot.channel_geral.send("Boa tarde!\n" + imagens_link[aleatorio])
 
         elif hora == 19:
             imagens_link = [
@@ -63,7 +72,7 @@ async def loop_1m():
                 "https://i.pinimg.com/564x/12/d1/cc/12d1cc49b307e23f6cab2d9bd07bd670.jpg",
                 "https://i0.wp.com/amaluz.com.br/wp-content/uploads/2021/12/Boa-noite-Nada-e-dificil-quando-temos-fe-em-Deus-e-na-vida.jpg?w=700&ssl=1"
             ]
-            await client.channel_geral.send("Boa noite!!!\n" + imagens_link[aleatorio])
+            await bot.channel_geral.send("Boa noite!!!\n" + imagens_link[aleatorio])
 
         elif hora == 8:
             dia = datetime.now(timezone.utc)
@@ -71,10 +80,10 @@ async def loop_1m():
             dia = '%02d' % dia.day
             for key, niver in membros.items():
                 if niver["aniversario"] == dia + "/" + mes:
-                    await client.channel_geral.send("<@" + key + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
+                    await bot.channel_geral.send("<@" + key + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
                     break
 
-@client.event
+@bot.event
 async def on_slash_command_error(inter : disnake.ApplicationCommandInteraction, 
                                  exception : commands.CommandError):
     try:
@@ -82,7 +91,7 @@ async def on_slash_command_error(inter : disnake.ApplicationCommandInteraction,
     except:
         pass
     
-    await client.owner.send(f"## Ocorreu um erro: " +
+    await bot.owner.send(f"## Ocorreu um erro: " +
                             f"\n- Servidor: **{inter.guild.name}**" +
                             f"\n- Canal: **{inter.channel.name}** às **{datetime.now().strftime('%H:%M:%S, %Y/%m/%d')}**" + 
                             f"\n- Usuário: **{inter.user.name}**" + 
@@ -91,31 +100,38 @@ async def on_slash_command_error(inter : disnake.ApplicationCommandInteraction,
     
     await inter.edit_original_message("Ocorreu um erro :(")
 
-@client.event
+@bot.event
 async def on_ready():
     loop_1m.start()
     
     membros = carregar()
     deletar = []
     for id, conteudo in membros.items():
-        usuario = client.get_user(int(id))
+        usuario = bot.get_user(int(id))
         if usuario == None:
             deletar.append(id)
     for id in deletar:
         del membros[id]
     salvar(membros)    
     
-    client.channel_geral = client.get_channel(842921629054271518)
-    client.channel_teste = client.get_channel(1054167826937688067)
+    bot.channel_geral = bot.get_channel(id_canais["geral"])
 
-@client.event
+@bot.event
 async def on_message(message : disnake.message.Message):
-    if message.author != client.user.id:
-        if xp_ativo:
-            if message.author.id not in usuarios_que_mandaram_mensagem and not message.author.bot:
-                usuarios_que_mandaram_mensagem.append(message.author.id)
+    if message.author != bot.user.id:
+        if bot.configs["xp_ativo"] and message.author.id not in bot.adicionar_xp and not message.author.bot:
+            valor_canais_xp = carregar("valor_canais_xp")
+            
+            valor_xp = 0
+            for valor_canal, lista_canais in valor_canais_xp.items():
+                if valor_xp < float(valor_canal):
+                    if message.channel.id in lista_canais:
+                        valor_xp = float(valor_canal)
+            valor_xp = 1 if valor_xp == 0 else valor_xp
+            
+            bot.adicionar_xp[message.author.id] = valor_xp
         
-        if client.user.mentioned_in(message):
+        if bot.user.mentioned_in(message):
             data = datetime.now(timezone.utc)
             hora = data.hour - 3
             autor = message.author.id
@@ -156,9 +172,9 @@ async def on_message(message : disnake.message.Message):
             await message.channel.send(f'<@{message.author.id}>:\n{matches_x.groups()[0].replace("x.com", "fixupx.com")}')
             await message.delete()
         
-    await client.process_commands(message)
+    await bot.process_commands(message)
 
-@client.event
+@bot.event
 async def on_member_join(member : disnake.User):
     membros = carregar()
     if str(member.id) not in membros:
@@ -179,4 +195,4 @@ async def on_member_join(member : disnake.User):
         salvar(membros)
 
 key = carregar("keys")["key"]
-client.run(key)
+bot.run(key)
