@@ -126,75 +126,31 @@ def obter_xp(level : int):
 class Xp(commands.Cog):
     def __init__(self, bot : commands.Bot):
         self.bot = bot
-        
-    @commands.command(name="resetxp")
-    async def resetxp(self, ctx: commands.Context):
-        if ctx.author.id != self.bot.owner.id:
-            return
-        
-        membros = carregar()
-        for id, conteudo in membros.items():
-            membros[id]["xp"] = 0
             
-        salvar(membros)
-        await ctx.send("AGORA DEU O CARAIO MEMO VIU, RESETOU FOI TUDO, RESETOU A PORRA TODA")
-    
-    @commands.command(name="setlvl")
-    async def setlvl(self, ctx : commands.Context, usuario : disnake.User | int, level : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
+    @commands.slash_command(name="valores_xp", description="Veja a quantidade de xp que cada canal dá!")
+    async def valores_xp(self, inter : disnake.ApplicationCommandInteraction):
+        await inter.response.defer()
+        embed = disnake.Embed(
+            title="Valores de xp para cada canal"
+        )
+        valor_canais_xp = carregar("valor_canais_xp")
+        valor_canais_xp = dict(sorted(valor_canais_xp.items(), key=lambda item: item[1]))
         
-        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
-            return
+        for valor, canais in valor_canais_xp.items():
+            canais_field = []
+            for canal in canais:
+                if self.bot.get_channel(canal).guild == inter.guild:
+                    canais_field.append(f"<#{canal}>")
+            
+            if len(canais_field) != 0:
+                embed.add_field(
+                    name=f"{valor}x de xp",
+                    value=", ".join(canais_field)
+                )
         
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] = obter_xp(level)
-        salvar(membros)
+        embed.set_footer(text="Os canais que não foram mencionados tem 1.0x de xp.")
         
-        await ctx.send("Feito!")
-    
-    @commands.command(name="setxp")
-    async def setxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
-        
-        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
-            return
-        
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] = quantidade
-        salvar(membros)
-        
-        await ctx.send("Feito!")
-        
-    @commands.command(name="addxp")
-    async def addxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
-        
-        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
-            return
-        
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] += quantidade
-        salvar(membros)
-        
-        await ctx.send("Feito!")
-    
-    @commands.command(name="setlvlexp")
-    async def setlvlexp(self, ctx : commands.Context, usuario : disnake.User | int, level : int, xp : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
-        
-        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
-            return
-        
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] = obter_xp(level) + xp
-        salvar(membros)
-    
-        await ctx.send("Feito!")
-        
+        await inter.edit_original_message(embed=embed)
     
     @commands.slash_command(name="xp", description="Veja seu XP")
     async def xp(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User = None):
@@ -233,7 +189,6 @@ class Xp(commands.Cog):
             super().__init__()
             self.bot = bot
             self.quantidade_por_pagina = 5
-            print(len(lista_ordenada_id))
             self.maximo_paginas = ceil(len(lista_ordenada_id) / self.quantidade_por_pagina)
             self.pagina = pagina
             if self.pagina > self.maximo_paginas or self.pagina < 1:
@@ -261,7 +216,6 @@ class Xp(commands.Cog):
             pos_y = 0
             for i in range((self.pagina - 1)* self.quantidade_por_pagina, self.pagina * self.quantidade_por_pagina):
                 usuario = self.bot.get_user(int(self.lista_ordenada_id[i]))
-                # print(self.membros[self.lista_ordenada_id[i]])
                 xp = self.membros[self.lista_ordenada_id[i]]["xp"]
                 
                 imagem_usuario = criar_imagem_xp(usuario, xp, i + 1)

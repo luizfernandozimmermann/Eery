@@ -6,8 +6,8 @@ from random import randint
 
 
 class JogoVelha(commands.Cog):
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.bot = bot
 
     @commands.slash_command(name="jogar", description="Jogo da velha :)")
     async def jogar(self, inter : disnake.ApplicationCommandInteraction):
@@ -252,5 +252,5 @@ class JogoVelha(commands.Cog):
                 return False
          
 
-def setup(client: commands.Bot):
-    client.add_cog(JogoVelha(client))
+def setup(bot: commands.Bot):
+    bot.add_cog(JogoVelha(bot))

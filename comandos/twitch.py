@@ -6,23 +6,23 @@ from save_and_load import *
 
 
 class Twitch(commands.Cog):
-    def __init__(self, client : commands.Bot):
-        self.client = client
+    def __init__(self, bot : commands.Bot):
+        self.bot = bot
         
         self.pessoas_em_live = []
         
         twitch_keys = carregar("keys")["twitch_keys"]
-        self.twitch_client_id = twitch_keys["twitch_client_id"]
-        self.twitch_client_secret = twitch_keys["twitch_client_secret"]
+        self.twitch_bot_id = twitch_keys["twitch_bot_id"]
+        self.twitch_bot_secret = twitch_keys["twitch_bot_secret"]
         
         self.token_url = "https://id.twitch.tv/oauth2/token"
         self.token_params = {
-            "client_id": self.twitch_client_id,
-            "client_secret": self.twitch_client_secret,
+            "client_id": self.twitch_bot_id,
+            "client_secret": self.twitch_bot_secret,
             "grant_type": "client_credentials"
         }
         
-        client.loop.create_task(self.check_twitch_stream())
+        bot.loop.create_task(self.check_twitch_stream())
 
     @commands.slash_command(name="twitch", description="Registra seu nome de usuário da Twitch (Notifica quando você abrir live)")
     async def twitch(inter : disnake.ApplicationCommandInteraction, nome_usuario : str):
@@ -40,7 +40,7 @@ class Twitch(commands.Cog):
             data = response.json()
             access_token = data["access_token"]
             headers = {
-                "Client-ID": self.twitch_client_id,
+                "Client-ID": self.twitch_bot_id,
                 "Authorization": f"Bearer {access_token}"
             }
             
@@ -64,7 +64,7 @@ class Twitch(commands.Cog):
                 if data["data"][0]["type"] != "live" or str(id_membro) in self.pessoas_em_live:
                     return
                 self.pessoas_em_live.append(str(id_membro))
-                await self.client.channel_geral.send(f"<@{id_membro}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{twitch_streamer}")
+                await self.bot.channel_geral.send(f"<@{id_membro}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{twitch_streamer}")
             
             elif str(id_membro) in self.pessoas_em_live:
                 self.pessoas_em_live.remove(str(id_membro))
@@ -72,6 +72,6 @@ class Twitch(commands.Cog):
             pass
         
         
-def setup(client: commands.Bot):
-    client.add_cog(Twitch(client))
+def setup(bot: commands.Bot):
+    bot.add_cog(Twitch(bot))
     

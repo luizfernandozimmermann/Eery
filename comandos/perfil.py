@@ -10,8 +10,8 @@ def validar_link(link : str) -> bool:
 
 
 class Perfil(commands.Cog):
-    def __init__(self, client : commands.Bot):
-        self.client = client
+    def __init__(self, bot : commands.Bot):
+        self.bot = bot
         
     @commands.slash_command(name="registrar", description="Registrar seu usuário de discord")
     async def registrar(self, inter : disnake.ApplicationCommandInteraction):
@@ -215,5 +215,5 @@ class Perfil(commands.Cog):
         await inter.edit_original_message("Genshin UID registrado com sucesso!")
 
    
-def setup(client: commands.Bot):
-    client.add_cog(Perfil(client))
+def setup(bot: commands.Bot):
+    bot.add_cog(Perfil(bot))

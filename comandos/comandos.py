@@ -10,36 +10,9 @@ from save_and_load import *
 
 
 class Comandos(commands.Cog):
-    def __init__(self, client : commands.Bot):
-        self.client = client
-    
-    @commands.command(name="backup")
-    async def backup(self, context : commands.Context):
-        if context.author.id == self.client.owner.id:
-            with open("saving.json", "r") as f:
-                file = disnake.File(f)
-                await context.author.send(file=file)
-                
-    @commands.command(name="backdown")
-    async def backdown(self, context : commands.Context):
-        if context.author.id == self.client.owner.id:
-            content = json.loads(
-                requests.get(context.message.attachments[0].url, allow_redirects=True).content.decode("utf-8")
-                )
-            salvar(content)
-
-    @commands.command(name="modificar")
-    async def modificar(self, inter : commands.Context):
-        if inter.author.id == self.client.owner.id:
-            membros = carregar()
-            for id, conteudo in membros.items():
-                membro = membros[id]
-                membro["animes"] = {}
-                membros[id] = membro
-            salvar(membros)
-            await inter.channel.send("belezinha")
-
-    
+    def __init__(self, bot : commands.Bot):
+        self.bot = bot
+        
     @commands.slash_command(name="roll", description="Gera um número aleatório")
     async def roll(self, inter : disnake.ApplicationCommandInteraction, max : int = 100):
         await inter.response.send_message(f"{inter.user.display_name} rolou o número {randint(0, max)}")
@@ -53,7 +26,7 @@ class Comandos(commands.Cog):
             colour=disnake.Colour.blue()
         )
         
-        comandos = list(self.client.slash_commands)
+        comandos = list(self.bot.slash_commands)
         comandos.sort(key=lambda x: x.name)
         for comando in comandos:
             embed.add_field(
@@ -99,7 +72,7 @@ class Comandos(commands.Cog):
     async def bruno(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User , pontos : int):
         await inter.response.defer()
 
-        if inter.author.id not in [249674362410631169, self.client.owner.id]:
+        if inter.author.id not in [249674362410631169, self.bot.owner.id]:
             await inter.edit_original_message("Você não possui permissão para alterar os Bruno points.")
             return
         
@@ -110,7 +83,7 @@ class Comandos(commands.Cog):
 
     @commands.slash_command(name="adm", description="Comando para manutenção do bot, apenas o desenvolvedor pode utilizar")
     async def adm(self, inter : disnake.ApplicationCommandInteraction, comando : str, assincrono : bool = True):
-        if inter.author.id in [self.client.owner.id, inter.guild.owner.id]:
+        if inter.author.id in [self.bot.owner.id, inter.guild.owner.id]:
             if not assincrono:
                 exec(comando)
                 return
@@ -118,7 +91,7 @@ class Comandos(commands.Cog):
 
     @commands.slash_command(name="msg", description="Comando para a Eery falar algo, apenas alguns podem utilizar :)")
     async def msg(self, inter : disnake.ApplicationCommandInteraction, mensagem : str, contem_variavel : bool = False):
-        if inter.author.id in [self.client.owner.id, inter.guild.owner.id]:
+        if inter.author.id in [self.bot.owner.id, inter.guild.owner.id]:
             if contem_variavel:
                 mensagem = eval(f"f'{mensagem}'")
                 
@@ -225,5 +198,5 @@ class Comandos(commands.Cog):
         await inter.edit_original_message("Nome adicionado com sucesso!")
 
 
-def setup(client: commands.Bot):
-    client.add_cog(Comandos(client))
+def setup(bot: commands.Bot):
+    bot.add_cog(Comandos(bot))
