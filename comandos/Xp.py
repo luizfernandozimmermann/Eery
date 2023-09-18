@@ -111,6 +111,17 @@ def criar_imagem_xp(usuario : disnake.User, xp : int, pos_ranking : int):
     
     return imagem
 
+def obter_xp(level : int):
+    xp = 0
+    xp_requerido = 100
+
+    while level > 0:
+        xp += xp_requerido
+        level -= 1
+        xp_requerido = 5 * (level ** 2) + (50 * level) + 100
+    
+    return xp
+
 
 class Xp(commands.Cog):
     def __init__(self, bot : commands.Bot):
@@ -136,16 +147,8 @@ class Xp(commands.Cog):
         if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
-        xp = 0
-        xp_requerido = 100
-
-        while level > 0:
-            xp += xp_requerido
-            level -= 1
-            xp_requerido = 5 * (level ** 2) + (50 * level) + 100
-        
         membros = carregar()
-        membros[str(usuario.id)]["xp"] = xp
+        membros[str(usuario.id)]["xp"] = obter_xp(level)
         salvar(membros)
         
         await ctx.send("Feito!")
@@ -177,6 +180,21 @@ class Xp(commands.Cog):
         salvar(membros)
         
         await ctx.send("Feito!")
+    
+    @commands.command(name="setlvlexp")
+    async def setlvlexp(self, ctx : commands.Context, usuario : disnake.User | int, level : int, xp : int):
+        if type(usuario) == int:
+            usuario = self.bot.get_user(usuario)
+        
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        membros = carregar()
+        membros[str(usuario.id)]["xp"] = obter_xp(level) + xp
+        salvar(membros)
+    
+        await ctx.send("Feito!")
+        
     
     @commands.slash_command(name="xp", description="Veja seu XP")
     async def xp(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User = None):
