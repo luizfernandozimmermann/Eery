@@ -1,0 +1,274 @@
+import json
+import disnake
+from disnake.ext import commands
+import requests
+from comandos.Xp import obter_xp
+
+from save_and_load import carregar, salvar
+
+
+class Adm(commands.Cog):
+    def __init__(self, bot : commands.Bot):
+        self.bot = bot
+    
+    @commands.command(name="admhelp", description="Comando de help pros adm")
+    async def admhelp(self, ctx : commands.Context):
+        if ctx.author.id in [self.bot.owner.id, ctx.guild.owner.id]:
+            embed = disnake.Embed(
+                title="Lista de comando dos admin B)"
+            )
+            
+            comandos = sorted(self.bot.commands, key=lambda x: x.name)
+
+            for comando in comandos:
+                parametros = ""
+                
+                for nome, param in comando.clean_params.items():
+                    param = str(param.annotation)
+                    param = param \
+                        .removeprefix("typing.Union[").removesuffix("]").replace(", ", " | ") \
+                        .removeprefix("<class '").removesuffix("'>")
+                    
+                    if param == "inspect._empty":
+                        param = "any"
+                    parametros += f"{nome}: {param}\n"
+                
+                parametros = "None" if parametros == "" else parametros
+                    
+                embed.add_field(
+                    name=f"{comando.name}: {comando.description}",
+                    value=parametros,
+                    inline=False
+                )
+            await ctx.send(embed=embed)
+    
+    @commands.command(name="saving", description="Envia os dados atuais")
+    async def saving(self, ctx : commands.Context):
+        if ctx.author.id == self.bot.owner.id:
+            with open("saving.json", "r") as f:
+                file = disnake.File(f)
+                await ctx.author.send(file=file)
+                
+    @commands.command(name="backup", description="Envie o backup para utilizar")
+    async def backup(self, ctx : commands.Context):
+        if ctx.author.id == self.bot.owner.id:
+            content = json.loads(
+                requests.get(ctx.message.attachments[0].url, allow_redirects=True).content.decode("utf-8")
+                )
+            salvar(content)
+
+    @commands.command(name="addatr", description="Adiciona atributo para o banco")
+    async def addatr(self, ctx : commands.Context, atr : str, valor):
+        if ctx.author.id == self.bot.owner.id:
+            membros = carregar()
+            for id, conteudo in membros.items():
+                if atr not in conteudo:
+                    conteudo[atr] = eval(valor)
+                    membros[id] = conteudo
+            salvar(membros)
+            await ctx.channel.send("belezinha")
+    
+    @commands.command(name="rematr", description="Remove atributo do banco")
+    async def rematr(self, ctx : commands.Context, atr : str):
+        if ctx.author.id == self.bot.owner.id:
+            membros = carregar()
+            for id, conteudo in membros.items():
+                if atr in conteudo:
+                    del conteudo[atr]
+                    membros[id] = conteudo
+            salvar(membros)
+            await ctx.channel.send("belezinha")
+
+    @commands.command(name="config", description="Troca (ou mostra) config")
+    async def config(self, ctx : commands.Context, config : str = None, valor = None):
+        if ctx.author.id == self.bot.owner.id:
+            if config == valor == None:
+                embed = disnake.Embed(
+                    title="Configs"
+                )
+                for nome, valor in self.bot.configs.items():
+                    tipo = str(type(valor)).removeprefix("<class '").removesuffix("'>")
+                    embed.add_field(
+                        name=nome,
+                        value=f'{tipo}: {valor}',
+                        inline=False
+                    )
+                await ctx.send(embed=embed)
+                return
+            self.bot.configs[config] = eval(valor)
+            salvar(self.bot.configs, "configs")
+            await ctx.send("Bazinga!")
+
+    
+    @commands.command(name="resetxp", description="Reseta o xp de geral")
+    async def resetxp(self, ctx: commands.Context):
+        if ctx.author.id != self.bot.owner.id:
+            return
+        
+        membros = carregar()
+        for id, conteudo in membros.items():
+            membros[id]["xp"] = 0
+            
+        salvar(membros)
+        await ctx.send("AGORA DEU O CARAIO MEMO VIU, RESETOU FOI TUDO, RESETOU A PORRA TODA")
+    
+    @commands.command(name="setlvl", description="Seta o lvl da pessoa mencionada")
+    async def setlvl(self, ctx : commands.Context, usuario : disnake.User | int, level : int):
+        if type(usuario) == int:
+            usuario = self.bot.get_user(usuario)
+        
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        membros = carregar()
+        membros[str(usuario.id)]["xp"] = obter_xp(level)
+        salvar(membros)
+        
+        await ctx.send("Feito!")
+    
+    @commands.command(name="setxp", description="Seta o xp da pessoa mencionada")
+    async def setxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
+        if type(usuario) == int:
+            usuario = self.bot.get_user(usuario)
+        
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        membros = carregar()
+        membros[str(usuario.id)]["xp"] = quantidade
+        salvar(membros)
+        
+        await ctx.send("Feito!")
+        
+    @commands.command(name="addxp", description="Adiciona xp para pessoa mencionada")
+    async def addxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
+        if type(usuario) == int:
+            usuario = self.bot.get_user(usuario)
+        
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        membros = carregar()
+        membros[str(usuario.id)]["xp"] += quantidade
+        salvar(membros)
+        
+        await ctx.send("Feito!")
+    
+    @commands.command(name="setlvlexp", description="Seta o lvl e xp da pessoa mencionada")
+    async def setlvlexp(self, ctx : commands.Context, usuario : disnake.User | int, level : int, xp : int):
+        if type(usuario) == int:
+            usuario = self.bot.get_user(usuario)
+        
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        membros = carregar()
+        membros[str(usuario.id)]["xp"] = obter_xp(level) + xp
+        salvar(membros)
+    
+        await ctx.send("Feito!")
+        
+    @commands.command(name="addvalorcanal", description="Adiciona valor de xp para os ids de canais mencionados")
+    async def addvalorxp(self, ctx : commands.Context, valor : float, *id_canais : str):
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        valor_canais_xp = carregar("valor_canais_xp")
+        valor = str(valor).replace(",", ".")
+        
+        canais = list(dict.fromkeys(id_canais))
+        
+        duplicatas = {
+            
+        }
+        for valor, valor_canais in valor_canais_xp.items():
+            for canal in canais:
+                id_canal = int(canal.removeprefix("\u2060"))
+                if id_canal in valor_canais:
+                    duplicatas[valor] = id_canal
+        
+        for valor, id_canal in duplicatas.items():
+            valor_canais_xp[valor].remove(id_canal)
+        
+        if valor in valor_canais_xp:
+            for pos, canal in enumerate(canais):
+                id_canal = int(canal.removeprefix("\u2060"))
+                if id_canal not in valor_canais_xp[valor]:
+                    try:
+                        canais[pos] = self.bot.get_channel(id_canal).name
+                        valor_canais_xp[valor].append(id_canal)
+                    except:
+                        await ctx.send(f"O id de canal {id_canal} não existe")
+                        return
+                else:
+                    canais.remove(canal)
+            
+            if len(canais) != 0:
+                salvar(valor_canais_xp, "valor_canais_xp")
+                await ctx.send(f"Feito! Canal(is) {', '.join(canais)} adicionado(s) ao valor {valor}!")
+            return
+        
+        valor_canais_xp[valor] = canais
+        salvar(valor_canais_xp, "valor_canais_xp")
+        await ctx.send(f"Feito! Criado o valor de {valor} para o(s) canal(is) {', '.join(canais)}!")
+        
+    @commands.command(name="remvalorcanal", description="Remove o valor de xp para os ids de canais mencionados")
+    async def remvalorxp(self, ctx : commands.Context, *id_canais : str):
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        valor_canais_xp = carregar("valor_canais_xp")
+        
+        canais = list(dict.fromkeys(id_canais))
+        
+        removidos = []
+        valor_apagar = []
+        for canal in canais:
+            for valor, canais_valor in valor_canais_xp.items():
+                id_canal = int(canal.removeprefix("\u2060"))
+                if id_canal in canais_valor:
+                    valor_canais_xp[valor].remove(id_canal)
+                    removidos.append(canal)
+                    
+                    if len(valor_canais_xp[valor]) == 0:
+                        valor_apagar.append(valor)
+                        
+        for valor in valor_apagar:
+            del valor_canais_xp[valor]
+        
+        for pos, canal in enumerate(removidos):
+            if canal in canais:
+                canais.remove(canal)
+                id_canal = int(canal.removeprefix("\u2060"))
+                removidos[pos] = self.bot.get_channel(id_canal).name
+                
+        for pos, canal in enumerate(canais):
+            id_canal = int(canal.removeprefix("\u2060"))
+            try:
+                canais[pos] = self.bot.get_channel(id_canal).name
+            except:
+                await ctx.send(f"O id de canal {id_canal} não existe")
+                return
+        
+        salvar(valor_canais_xp, "valor_canais_xp")
+        await ctx.send(f"Feito! \nCanais removidos: {', '.join(removidos)}\nCanais não removidos: {', '.join(canais)}")
+    
+    @commands.command(name="limparvalorcanal", description="Limpa o valor de todos os canais com este valor")
+    async def limparvalorxp(self, ctx : commands.Context, valor : float):
+        if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
+            return
+        
+        valor_canais_xp = carregar("valor_canais_xp")
+        valor = str(valor).replace(",", ".")
+        
+        if valor not in valor_canais_xp:
+            await ctx.send(f"O valor {valor} de canal não existe.")
+            return
+
+        del valor_canais_xp[valor]
+        salvar(valor_canais_xp, "valor_canais_xp")
+        await ctx.send(f"Valor {valor} de canal foi deletado!")
+        
+
+def setup(bot : commands.Bot):
+    bot.add_cog(Adm(bot))
