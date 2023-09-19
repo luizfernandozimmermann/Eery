@@ -208,9 +208,20 @@ class Adm(commands.Cog):
                 await ctx.send(f"Feito! Canal(is) {', '.join(canais)} adicionado(s) ao valor {valor}!")
             return
         
-        valor_canais_xp[valor] = canais
+        canais_add = []
+        nome_canais_add = []
+        for pos, canal in enumerate(canais):
+            try:
+                id_canal = int(canal)
+                nome_canal = self.bot.get_channel(id_canal).name
+                nome_canais_add.append(nome_canal)
+                canais_add.append(id_canal)
+            except:
+                pass
+            
+        valor_canais_xp[valor] = canais_add
         salvar(valor_canais_xp, "valor_canais_xp")
-        await ctx.send(f"Feito! Criado o valor de {valor} para o(s) canal(is) {', '.join(canais)}!")
+        await ctx.send(f"Feito! Criado o valor de {valor} para o(s) canal(is) {', '.join(nome_canais_add)}!")
         
     @commands.command(name="remvalorcanal", description="Remove o valor de xp para os ids de canais mencionados")
     async def remvalorxp(self, ctx : commands.Context, *id_canais : str):
