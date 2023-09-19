@@ -11,7 +11,7 @@ intents = disnake.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 bot.load_extensions("comandos")
-bot.adicionar_xp = {}
+bot.xp_adicionado = {}
 
 bot.configs = carregar("configs")
 
@@ -19,22 +19,7 @@ id_canais = carregar("id_canais")
 
 @tasks.loop(seconds=59)
 async def loop_1m():
-    membros = carregar()
-    canal_lvl_up = bot.get_channel(id_canais["xp"])
-    
-    for id_usuario, valor_xp in bot.adicionar_xp.items():
-        xp = membros[str(id_usuario)]["xp"]
-        
-        lvl_anterior = obter_level(xp)[0]
-        xp += randint(int(15 * valor_xp), int(25 * valor_xp))
-        lvl_posterior = obter_level(xp)[0]
-        
-        membros[str(id_usuario)]["xp"] = xp
-        if lvl_anterior != lvl_posterior:
-            await canal_lvl_up.send(f"<@{id_usuario}> acaba de upar para o level {lvl_posterior}!")
-            
-    salvar(membros)
-    bot.adicionar_xp = {}
+    bot.xp_adicionado = []
     
     horario = datetime.now(timezone.utc)
     minuto = horario.minute
@@ -78,6 +63,7 @@ async def loop_1m():
             dia = datetime.now(timezone.utc)
             mes = '%02d' % dia.month
             dia = '%02d' % dia.day
+            membros = carregar()
             for key, niver in membros.items():
                 if niver["aniversario"] == dia + "/" + mes:
                     await bot.channel_geral.send("<@" + key + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
@@ -119,8 +105,9 @@ async def on_ready():
 @bot.event
 async def on_message(message : disnake.message.Message):
     if message.author != bot.user.id:
-        if bot.configs["xp_ativo"] and message.author.id not in bot.adicionar_xp and not message.author.bot:
+        if bot.configs["xp_ativo"] and str(message.author.id) not in bot.xp_adicionado and not message.author.bot:
             valor_canais_xp = carregar("valor_canais_xp")
+            membros = carregar()
             
             valor_xp = 0
             for valor_canal, lista_canais in valor_canais_xp.items():
@@ -128,8 +115,20 @@ async def on_message(message : disnake.message.Message):
                     if message.channel.id in lista_canais:
                         valor_xp = float(valor_canal)
             valor_xp = 1 if valor_xp == 0 else valor_xp
+            xp = membros[str(message.author.id)]["xp"]
+        
+            lvl_anterior = obter_level(xp)[0]
+            xp += randint(int(15 * valor_xp), int(25 * valor_xp))
+            lvl_posterior = obter_level(xp)[0]
             
-            bot.adicionar_xp[message.author.id] = valor_xp
+            membros[str(message.author.id)]["xp"] = xp
+            canal_lvl_up = bot.get_channel(id_canais["xp"])
+            if lvl_anterior != lvl_posterior:
+                await canal_lvl_up.send(f"<@{message.author.id}> acaba de upar para o level {lvl_posterior}!")
+            
+            salvar(membros)
+            
+            bot.xp_adicionado.append(message.author.id)
         
         if bot.user.mentioned_in(message):
             data = datetime.now(timezone.utc)
