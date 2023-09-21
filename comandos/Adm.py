@@ -33,7 +33,7 @@ class Adm(commands.Cog):
                         param = "any"
                     parametros += f"{nome}: {param}\n"
                 
-                parametros = "None" if parametros == "" else parametros
+                parametros = None if parametros == "" else parametros
                     
                 embed.add_field(
                     name=f"{comando.name}: {comando.description}",
@@ -43,27 +43,27 @@ class Adm(commands.Cog):
             await ctx.send(embed=embed)
     
     @commands.command(name="saving", description="Envia os dados atuais")
-    async def saving(self, ctx : commands.Context):
+    async def saving(self, ctx : commands.Context, arquivo : str = "saving"):
         if ctx.author.id == self.bot.owner.id:
-            with open("saving.json", "r") as f:
+            with open(f"data/{arquivo}.json", "r") as f:
                 file = disnake.File(f)
                 await ctx.author.send(file=file)
                 
     @commands.command(name="backup", description="Envie o backup para utilizar")
-    async def backup(self, ctx : commands.Context):
+    async def backup(self, ctx : commands.Context, arquivo : str = "saving"):
         if ctx.author.id == self.bot.owner.id:
             content = json.loads(
                 requests.get(ctx.message.attachments[0].url, allow_redirects=True).content.decode("utf-8")
                 )
-            salvar(content)
+            salvar(content, arquivo=arquivo)
 
     @commands.command(name="addatr", description="Adiciona atributo para o banco")
-    async def addatr(self, ctx : commands.Context, atr : str, valor):
+    async def addatr(self, ctx : commands.Context, atr : str, valor = None):
         if ctx.author.id == self.bot.owner.id:
             membros = carregar()
             for id, conteudo in membros.items():
                 if atr not in conteudo:
-                    conteudo[atr] = eval(valor)
+                    conteudo[atr] = eval(str(valor))
                     membros[id] = conteudo
             salvar(membros)
             await ctx.channel.send("belezinha")

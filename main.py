@@ -3,6 +3,7 @@ from disnake.ext import commands, tasks
 import re
 from datetime import datetime, timezone
 from random import randint
+from comandos.Perfil import registrar
 from comandos.Xp import obter_level
 from save_and_load import *
 
@@ -174,24 +175,12 @@ async def on_message(message : disnake.message.Message):
     await bot.process_commands(message)
 
 @bot.event
-async def on_member_join(member : disnake.User):
-    membros = carregar()
-    if str(member.id) not in membros:
-        membros[str(member.id)] = {
-                "nick": member.name,
-                "nome": "Não informado",
-                "aniversario": "Não informado",
-                "estado": "Não informado",
-                "twitter": "Não informado",
-                "twitch": "Não informado",
-                "lista_animes": "Não informado",
-                "steam": "Não informado",
-                "instagram": "Não informado",
-                "osu": "Não informado",
-                "genshin_uid": "Não informado",
-                "bruno_points": 0
-            }
-        salvar(membros)
+async def on_member_join(usuario : disnake.User):
+    registrar(usuario)
+
+@bot.before_slash_command_invoke
+async def before_slash_command_invoke(inter : disnake.ApplicationCommandInteraction):
+    registrar(inter.user)
 
 key = carregar("keys")["key"]
 bot.run(key)

@@ -50,7 +50,7 @@ class Twitch(commands.Cog):
             await asyncio.sleep(60)
 
     async def twitch_mensagem_live(self, id_membro : int, membro : dict, headers : dict):
-        if membro["twitch"] == "Não informado":
+        if membro["twitch"] == None:
             return
         
         twitch_streamer = membro["twitch"]
