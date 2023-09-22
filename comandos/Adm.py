@@ -80,9 +80,11 @@ class Adm(commands.Cog):
             await ctx.channel.send("belezinha")
 
     @commands.command(name="config", description="Troca (ou mostra) config")
-    async def config(self, ctx : commands.Context, config : str = None, valor = None):
+    async def config(self, ctx : commands.Context, *configs : str):
         if ctx.author.id == self.bot.owner.id:
-            if config == valor == None:
+            valor = configs[-1] if len(configs) > 1 else None
+            configs = list(configs)[:-1] if len(configs) > 1 else None
+            if configs == valor == None:
                 embed = disnake.Embed(
                     title="Configs"
                 )
@@ -95,7 +97,11 @@ class Adm(commands.Cog):
                     )
                 await ctx.send(embed=embed)
                 return
-            self.bot.configs[config] = eval(valor)
+            
+            comando = "self.bot.configs"
+            for config in configs:
+                comando += f"['{config}']"
+            exec(f"{comando} = {valor}")
             salvar(self.bot.configs, "configs")
             await ctx.send("Bazinga!")
 

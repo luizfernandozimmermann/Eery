@@ -106,7 +106,7 @@ async def on_ready():
 @bot.event
 async def on_message(message : disnake.message.Message):
     if message.author != bot.user.id:
-        if bot.configs["xp_ativo"] and str(message.author.id) not in bot.xp_adicionado and not message.author.bot:
+        if bot.configs["xp"]["ativo"] and message.author.id not in bot.xp_adicionado and not message.author.bot:
             valor_canais_xp = carregar("valor_canais_xp")
             membros = carregar()
             
@@ -119,7 +119,7 @@ async def on_message(message : disnake.message.Message):
             xp = membros[str(message.author.id)]["xp"]
         
             lvl_anterior = obter_level(xp)[0]
-            xp += randint(int(15 * valor_xp), int(25 * valor_xp))
+            xp += randint(int(15 * valor_xp), int(25 * valor_xp)) * bot.configs["xp"]["multiplicador"]
             lvl_posterior = obter_level(xp)[0]
             
             membros[str(message.author.id)]["xp"] = xp
