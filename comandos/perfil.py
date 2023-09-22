@@ -27,7 +27,9 @@ def registrar(usuario : disnake.Member | disnake.User):
         "instagram": None,
         "osu": None,
         "genshin_uid": None,
-        "bruno_points": 0
+        "bruno_points": 0,
+        "xp": 0,
+        "time": None
     }
 
     salvar(membros)
@@ -311,7 +313,7 @@ class Perfil(commands.Cog):
                     
         embed = disnake.Embed(
             title="Arquibancada da União Sinistra",
-            colour=disnake.Colour.blurple()
+            colour=disnake.Colour.blue()
         )
         embed.set_footer(text="Qualquer desentendimento entre torcedores levará todos ao gulag.")
         

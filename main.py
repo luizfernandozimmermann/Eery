@@ -6,17 +6,17 @@ from random import randint
 from comandos.Perfil import registrar
 from comandos.Xp import obter_level
 from save_and_load import *
+import codecs
 
 
 intents = disnake.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
+bot.remove_command("help")
 
 bot.load_extensions("comandos")
-bot.xp_adicionado = {}
+bot.xp_adicionado = []
 
 bot.configs = carregar("configs")
-
-id_canais = carregar("id_canais")
 
 @tasks.loop(seconds=59)
 async def loop_1m():
@@ -101,11 +101,11 @@ async def on_ready():
         del membros[id]
     salvar(membros)    
     
-    bot.channel_geral = bot.get_channel(id_canais["geral"])
+    bot.channel_geral = bot.get_channel(bot.configs["canais"]["geral"])
 
 @bot.event
 async def on_message(message : disnake.message.Message):
-    if message.author != bot.user.id:
+    if not message.author.bot:
         if bot.configs["xp"]["ativo"] and message.author.id not in bot.xp_adicionado and not message.author.bot:
             valor_canais_xp = carregar("valor_canais_xp")
             membros = carregar()
@@ -123,7 +123,7 @@ async def on_message(message : disnake.message.Message):
             lvl_posterior = obter_level(xp)[0]
             
             membros[str(message.author.id)]["xp"] = xp
-            canal_lvl_up = bot.get_channel(id_canais["xp"])
+            canal_lvl_up = bot.get_channel(bot.configs["canais"]["xp"])
             if lvl_anterior != lvl_posterior:
                 await canal_lvl_up.send(f"<@{message.author.id}> acaba de upar para o level {lvl_posterior}!")
             
@@ -137,29 +137,24 @@ async def on_message(message : disnake.message.Message):
             autor = message.author.id
 
             if 7 <= hora < 13 and "bom dia" in message.content.lower():
-                await message.channel.send("<@" + str(autor) + "> Bom dia !!!")
+                await message.reply("<@" + str(autor) + "> Bom dia !!!")
             elif 13 <= hora < 19 and "boa tarde" in message.content.lower():
-                await message.channel.send("<@" + str(autor) + "> Boa tarde !!!")
+                await message.reply("<@" + str(autor) + "> Boa tarde !!!")
             elif "boa noite" in message.content.lower():
-                await message.channel.send("<@" + str(autor) + "> Boa noite !!!")
+                await message.reply("<@" + str(autor) + "> Boa noite !!!")
 
             if "feliz ano novo" in message.content.lower():
-                await message.channel.send("<@" + str(autor) + "> Feliz ano novo para você !!! Espero que você tenha um ótimo 2012!!!")
+                await message.reply("<@" + str(autor) + "> Feliz ano novo para você !!! Espero que você tenha um ótimo 2012!!!")
         
-        reacoes = {
-            "mey": '\U00002764',
-            "ruan": '\U0001F308',
-            "olavo": '\U0001F480',
-            "sasa": ':sasadaph:1056344897919123506',
-            "sasa": ':sasadaph:1056344897919123506',
-            "vitin": '\U0001F48B',
-            "727": ':wysi:997606675576016956',
-            "bananinho": '\U0001F34C'
-        }
+        reacoes = bot.configs["reacoes"]
         
         for chave, reacao in reacoes.items():
             if chave in message.content.lower():
-                await message.add_reaction(reacao)
+                try:
+                    reacao = codecs.decode(reacao, 'unicode_escape')
+                except:
+                    pass
+                await message.add_reaction(f"{reacao}")
         
         # vxtwitter
         matches_twitter = re.match(r"(https://twitter.com/.*?/status/\w*)", message.content)

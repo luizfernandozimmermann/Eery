@@ -131,7 +131,8 @@ class Xp(commands.Cog):
     async def valores_xp(self, inter : disnake.ApplicationCommandInteraction):
         await inter.response.defer()
         embed = disnake.Embed(
-            title="Valores de xp para cada canal"
+            title="Valores de xp para cada canal",
+            colour=disnake.Colour.blue()
         )
         valor_canais_xp = carregar("valor_canais_xp")
         valor_canais_xp = dict(sorted(valor_canais_xp.items(), key=lambda item: item[1]))
@@ -205,7 +206,8 @@ class Xp(commands.Cog):
                 
         def montar_embed(self):
             embed = disnake.Embed(
-                title=f"Ranking de XP do server - {self.pagina}/{self.maximo_paginas}"
+                title=f"Ranking de XP do server - {self.pagina}/{self.maximo_paginas}",
+                colour=disnake.Colour.blue()
             )
             self.montar_imagem()
             embed.set_image("attachment://image.png")

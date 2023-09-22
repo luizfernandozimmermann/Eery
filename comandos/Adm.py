@@ -15,7 +15,8 @@ class Adm(commands.Cog):
     async def admhelp(self, ctx : commands.Context):
         if ctx.author.id in [self.bot.owner.id, ctx.guild.owner.id]:
             embed = disnake.Embed(
-                title="Lista de comando dos admin B)"
+                title="Lista de comando dos admin B)",
+                colour=disnake.Colour.blue()
             )
             
             comandos = sorted(self.bot.commands, key=lambda x: x.name)
@@ -86,7 +87,8 @@ class Adm(commands.Cog):
             configs = list(configs)[:-1] if len(configs) > 1 else None
             if configs == valor == None:
                 embed = disnake.Embed(
-                    title="Configs"
+                    title="Configs",
+                    colour=disnake.Colour.blue()
                 )
                 for nome, valor in self.bot.configs.items():
                     tipo = str(type(valor)).removeprefix("<class '").removesuffix("'>")

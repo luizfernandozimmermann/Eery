@@ -40,11 +40,15 @@ class Comandos(commands.Cog):
     @commands.slash_command(name="ans", description="Mostra a lista de aniversariantes, podendo escolher o mês")
     async def ans(self, inter : disnake.ApplicationCommandInteraction, mes : int = None):
         await inter.response.defer()
-        embed = disnake.Embed(colour=disnake.Color.blue(), title="Aniversariantes", description="")
+        embed = disnake.Embed(
+            title="Aniversariantes", 
+            description="",
+            colour=disnake.Color.blue(),
+            )
 
         membros : dict = carregar()
 
-        membros = dict(filter(lambda item: len(item[1]["aniversario"]) == 5, membros.items()))
+        membros = dict(filter(lambda item: item[1]["aniversario"] != None, membros.items()))
 
         if mes != None:
             if 0 > mes or mes > 12:

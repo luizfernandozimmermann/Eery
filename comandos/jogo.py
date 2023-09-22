@@ -35,7 +35,8 @@ class JogoVelha(commands.Cog):
         def gerar_embed(self, nome_jogador, resultado = ""):
             embed = disnake.Embed(
                 title=f"Jogo da Velha com {nome_jogador} {resultado}",
-                description = "Jogador: X, Eery: O"
+                description = "Jogador: X, Eery: O",
+                colour=disnake.Colour.blue()
                 )
             embed.set_image("attachment://image.png")
             return embed

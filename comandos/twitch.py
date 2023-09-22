@@ -64,7 +64,8 @@ class Twitch(commands.Cog):
                 if data["data"][0]["type"] != "live" or str(id_membro) in self.pessoas_em_live:
                     return
                 self.pessoas_em_live.append(str(id_membro))
-                await self.bot.channel_geral.send(f"<@{id_membro}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{twitch_streamer}")
+                canal_divulgacao = self.bot.get_channel(self.bot.configs["canais"]["divulgacao"])
+                await canal_divulgacao.send(f"<@{id_membro}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{twitch_streamer}")
             
             elif str(id_membro) in self.pessoas_em_live:
                 self.pessoas_em_live.remove(str(id_membro))
