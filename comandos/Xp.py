@@ -152,8 +152,8 @@ class Xp(commands.Cog):
         
         await inter.edit_original_message(embed=embed)
     
-    @commands.slash_command(name="xp", description="Veja seu XP")
-    async def xp(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User = None):
+    @commands.slash_command(name="level", description="Veja seu XP")
+    async def level(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User = None):
         await inter.response.defer()
         
         membros = carregar()
