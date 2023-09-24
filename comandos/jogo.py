@@ -4,6 +4,8 @@ import disnake
 from disnake.ext import commands
 from random import randint
 
+from entidades.Eery import Eery
+
 
 class JogoVelha(commands.Cog):
     def __init__(self, bot):
@@ -253,5 +255,5 @@ class JogoVelha(commands.Cog):
                 return False
          
 
-def setup(bot: commands.Bot):
+def setup(bot: Eery):
     bot.add_cog(JogoVelha(bot))

@@ -1,17 +1,16 @@
 import asyncio
-import json
 from random import randint
 import re
 import disnake
 from disnake.ext import commands
 import requests
-
-from save_and_load import *
+from entidades.Eery import Eery
 
 
 class Comandos(commands.Cog):
-    def __init__(self, bot : commands.Bot):
+    def __init__(self, bot : Eery):
         self.bot = bot
+        self.usuario_servicos = bot.usuario_servico
         
     @commands.slash_command(name="roll", description="Gera um número aleatório")
     async def roll(self, inter : disnake.ApplicationCommandInteraction, max : int = 100):
@@ -40,66 +39,73 @@ class Comandos(commands.Cog):
     @commands.slash_command(name="ans", description="Mostra a lista de aniversariantes, podendo escolher o mês")
     async def ans(self, inter : disnake.ApplicationCommandInteraction, mes : int = None):
         await inter.response.defer()
+
+        usuarios = sorted(
+            filter(
+                lambda usuario: usuario.aniversario != None,
+                self.usuario_servicos.pegar_todos_usuarios()
+                ),
+            key=lambda usuario: (usuario.aniversario[3:], usuario.aniversario[:2])
+            )
+        
         embed = disnake.Embed(
             title="Aniversariantes", 
             description="",
             colour=disnake.Color.blue(),
             )
-
-        membros : dict = carregar()
-
-        membros = dict(filter(lambda item: item[1]["aniversario"] != None, membros.items()))
-
+        
         if mes != None:
             if 0 > mes or mes > 12:
                 await inter.edit_original_message(f"{mes} não é um mês válido.")
                 return
-
+            
             meses = [
                 "Janeiro", "Fevereiro", "Março", "Abril", 
                 "Maio", "Junho", "Julho", "Agosto", 
                 "Setembro", "Outubro", "Novembro", "Dezembro"]
-
-            membros = dict(filter(lambda item: int(item[1]["aniversario"][3:]) == mes, membros.items()))
+            
             embed.title += f" do mês {meses[mes - 1]}"
-
-        aniversariantes = dict(sorted(
-            membros.items(), key=lambda item: (item[1]['aniversario'][3:], item[1]['aniversario'][0:2])
-            ))
-
-        for key, value in aniversariantes.items():
-            embed.description += f"\n<@{key}>: {value['aniversario']}"
         
+        
+        for usuario in usuarios:
+            embed.description += "\n".join(f"<@{usuario.id}>: {usuario.aniversario}")
+
         await inter.edit_original_message(embed=embed)
 
     @commands.slash_command(name="bruno", description="Comando para adicionar ou remover Bruno points da pessoa mencionada")
-    async def bruno(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User , pontos : int):
+    async def bruno(self, inter : disnake.ApplicationCommandInteraction, user : disnake.User , pontos : int):
         await inter.response.defer()
 
         if inter.author.id not in [249674362410631169, self.bot.owner.id]:
             await inter.edit_original_message("Você não possui permissão para alterar os Bruno points.")
             return
         
-        membros = carregar()
-        membros[str(usuario.id)]["bruno_points"] += int(pontos)
-        salvar(membros)
-        await inter.channel.send(f"Atualizado os Bruno Point de {usuario.name} em {pontos} pontos.")
+        usuario = self.usuario_servicos.pegar_usuario_valido(inter.user, user)
+        usuario.bruno_points += int(pontos)
+        self.usuario_servicos.salvar_usuario(usuario)
+        
+        await inter.channel.send(f"Atualizado os Bruno Point de {usuario.name} em {pontos} pontos. Agora ele(a) possui {usuario.bruno_points} pontos.")
 
     @commands.slash_command(name="adm", description="Comando para manutenção do bot, apenas o desenvolvedor pode utilizar")
     async def adm(self, inter : disnake.ApplicationCommandInteraction, comando : str, assincrono : bool = True):
-        if inter.author.id in [self.bot.owner.id, inter.guild.owner.id]:
-            if not assincrono:
-                exec(comando)
-                return
-            await eval(comando)
+        if inter.author.id not in [self.bot.owner.id, inter.guild.owner.id]:
+            await inter.response.send_message("Você não tem permissão para usar esse comando.")
+            return
+        if not assincrono:
+            exec(comando)
+            return
+        await eval(comando)
 
     @commands.slash_command(name="msg", description="Comando para a Eery falar algo, apenas alguns podem utilizar :)")
     async def msg(self, inter : disnake.ApplicationCommandInteraction, mensagem : str, contem_variavel : bool = False):
-        if inter.author.id in [self.bot.owner.id, inter.guild.owner.id]:
-            if contem_variavel:
-                mensagem = eval(f"f'{mensagem}'")
-                
-            await inter.channel.send(mensagem)
+        if inter.author.id not in [self.bot.owner.id, inter.guild.owner.id]:
+            await inter.response.send_message("Você não tem permissão para usar esse comando.")
+            return
+        
+        if contem_variavel:
+            mensagem = eval(f"f'{mensagem}'")
+            
+        await inter.channel.send(mensagem)
 
 
     async def sleep_check_and_delete_role(self, role):
@@ -196,11 +202,13 @@ class Comandos(commands.Cog):
     @commands.slash_command(name="nome", description="Registra seu nome")
     async def nome(self, inter : disnake.ApplicationCommandInteraction, nome : str):
         await inter.response.defer()
-        membros = carregar()
-        membros[str(inter.author.id)]["nome"] = nome.strip().capitalize()
-        salvar(membros)
+        
+        usuario = self.usuario_servicos.pegar_usuario(inter.user)
+        usuario.nome = nome.strip().capitalize()
+        self.usuario_servicos.salvar_usuario(usuario)
+        
         await inter.edit_original_message("Nome adicionado com sucesso!")
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Eery):
     bot.add_cog(Comandos(bot))

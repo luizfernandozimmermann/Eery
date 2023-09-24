@@ -2,12 +2,15 @@ import asyncio
 import disnake
 from disnake.ext import commands
 import requests
-from save_and_load import *
+from entidades.Eery import Eery
+from entidades.Usuario import Usuario
+from save_and_load import carregar
 
 
 class Twitch(commands.Cog):
-    def __init__(self, bot : commands.Bot):
+    def __init__(self, bot : Eery):
         self.bot = bot
+        self.usuario_servico = bot.usuario_servico
         
         self.pessoas_em_live = []
         
@@ -21,20 +24,20 @@ class Twitch(commands.Cog):
             "client_secret": self.twitch_bot_secret,
             "grant_type": "client_credentials"
         }
-        
-        bot.loop.create_task(self.check_twitch_stream())
 
     @commands.slash_command(name="twitch", description="Registra seu nome de usuário da Twitch (Notifica quando você abrir live)")
-    async def twitch(inter : disnake.ApplicationCommandInteraction, nome_usuario : str):
+    async def twitch(self, inter : disnake.ApplicationCommandInteraction, nome_usuario : str):
         await inter.response.defer()
-        membros = carregar()
-        membros[str(inter.author.id)]["twitch"] = nome_usuario
-        salvar(membros)
+        
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.twitch = nome_usuario.strip()
+        self.usuario_servico.salvar_usuario(usuario)
+        
         await inter.edit_original_message("Twitch atualizada com sucesso!")
         
     async def check_twitch_stream(self):
         while True:
-            membros = carregar()
+            usuarios = self.usuario_servico.pegar_todos_usuarios()
             
             response = requests.post(self.token_url, params=self.token_params)
             data = response.json()
@@ -44,35 +47,34 @@ class Twitch(commands.Cog):
                 "Authorization": f"Bearer {access_token}"
             }
             
-            for id_membro, membro in membros.items():
-                await self.twitch_mensagem_live(id_membro, membro, headers)
+            for usuario in usuarios:
+                await self.twitch_mensagem_live(usuario, headers)
                 
-            await asyncio.sleep(60)
+            await asyncio.sleep(10)
 
-    async def twitch_mensagem_live(self, id_membro : int, membro : dict, headers : dict):
-        if membro["twitch"] == None:
+    async def twitch_mensagem_live(self, usuario : Usuario, headers : dict):
+        if usuario.twitch == None:
             return
         
-        twitch_streamer = membro["twitch"]
         response = requests.get(
-            f"https://api.twitch.tv/helix/streams?user_login={twitch_streamer}",
+            f"https://api.twitch.tv/helix/streams?user_login={usuario.twitch}",
             headers=headers
         )
         data = response.json()
         try:
             if data["data"] != []:
-                if data["data"][0]["type"] != "live" or str(id_membro) in self.pessoas_em_live:
+                if data["data"][0]["type"] != "live" or usuario.id in self.pessoas_em_live:
                     return
-                self.pessoas_em_live.append(str(id_membro))
+                self.pessoas_em_live.append(usuario.id)
                 canal_divulgacao = self.bot.get_channel(self.bot.configs["canais"]["divulgacao"])
-                await canal_divulgacao.send(f"<@{id_membro}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{twitch_streamer}")
+                await canal_divulgacao.send(f"<@{usuario.id}> está ao vivo na Twitch! Assista em https://www.twitch.tv/{usuario.twitch}")
             
-            elif str(id_membro) in self.pessoas_em_live:
-                self.pessoas_em_live.remove(str(id_membro))
+            elif usuario.id in self.pessoas_em_live:
+                self.pessoas_em_live.remove(usuario.id)
         except:
             pass
         
         
-def setup(bot: commands.Bot):
+def setup(bot: Eery):
     bot.add_cog(Twitch(bot))
     

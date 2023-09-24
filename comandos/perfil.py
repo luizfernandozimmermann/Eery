@@ -1,39 +1,13 @@
 from enum import Enum
 import disnake
 from disnake.ext import commands
-from save_and_load import *
+from entidades.Eery import Eery
 from re import match
 
 
 def validar_link(link : str) -> bool:
-        regex = r'[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)'
-        return match(regex, link) is not None
-
-def registrar(usuario : disnake.Member | disnake.User):
-    membros = carregar()
-        
-    if str(usuario.id) in membros:
-        return False
-
-    membros[str(usuario.id)] = {
-        "nick": usuario.name,
-        "nome": None,
-        "aniversario": None,
-        "estado": None,
-        "twitter": None,
-        "twitch": None,
-        "lista_animes": None,
-        "steam": None,
-        "instagram": None,
-        "osu": None,
-        "genshin_uid": None,
-        "bruno_points": 0,
-        "xp": 0,
-        "time": None
-    }
-
-    salvar(membros)
-    return True
+    regex = r'[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)'
+    return match(regex, link) is not None
 
 
 class Time(Enum):
@@ -62,39 +36,27 @@ class Time(Enum):
 
 
 class Perfil(commands.Cog):
-    def __init__(self, bot : commands.Bot):
+    def __init__(self, bot : Eery):
         self.bot = bot
+        self.usuario_servico = bot.usuario_servico
         
-    @commands.slash_command(name="registrar", description="Registrar seu usuário de discord no perfil")
-    async def registrar(self, inter : disnake.ApplicationCommandInteraction):
-        await inter.response.defer()
-        if not registrar(inter.user):
-            await inter.edit_original_message("Você já está registrado.")
-            return
-        await inter.edit_original_message("Registrado com sucesso!")
-
     @commands.slash_command(name="perfil", description="Mostra seu perfil")
     async def perfil(self, inter : disnake.ApplicationCommandInteraction, usuario : disnake.User = None):
         await inter.response.defer()
 
-        if usuario == None:
-            usuario = inter.user
-
-        membros = carregar()
-
-        if str(usuario.id) not in membros:
-            await inter.edit_original_message(f"Usuário <@{usuario.id}> não está registrado.")
-            return
+        usuario = self.usuario_servico.pegar_usuario_valido(inter.user, usuario)
 
         embed_perfil = disnake.Embed(
             title = f"Perfil de {usuario.name}",
             colour=disnake.Colour.blue()
         )
         embed_perfil.set_thumbnail(usuario.avatar)
+        embed_perfil.add_field(
+            name="Nick",
+            value=usuario.global_name
+        )
         
-        membro : dict[str, str] = membros[str(usuario.id)]
-        
-        for key, value in membro.items():
+        for key, value in self.usuario_servico.usuario_info_para_dict(usuario).items():
             if value != None and key not in ["xp"]:
                 if key == "twitch":
                     value = f"https://www.twitch.tv/{value}"
@@ -106,14 +68,6 @@ class Perfil(commands.Cog):
 
         await inter.edit_original_message(embed=embed_perfil)
         
-    @commands.slash_command(name="nick", description="Atualiza seu nick no perfil")
-    async def nick(self, inter : disnake.ApplicationCommandInteraction):
-        await inter.response.defer()
-        membros = carregar()
-        membros[str(inter.author.id)]["nick"] = inter.author.name
-        salvar(membros)
-        await inter.edit_original_message("Nick atualizado com sucesso!")
-        
     @commands.slash_command(name="anv", description="Registra a data do seu aniversário no perfil")
     async def anv(self, inter : disnake.ApplicationCommandInteraction, dia : int, mes : int):
         await inter.response.defer()
@@ -122,40 +76,36 @@ class Perfil(commands.Cog):
             await inter.edit_original_message("Insira uma data válida")
             return
         
-        membros = carregar()
-        membros[str(inter.user.id)]["aniversario"] = f"{dia:02}/{mes:02}"
-        salvar(membros)
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.aniversario = f"{dia:02}/{mes:02}"
+        self.usuario_servico.salvar_usuario(usuario)
 
         await inter.edit_original_message("Aniversário registrado com sucesso!")
 
     @commands.slash_command(name="estado", description="Registra seu Estado no perfil")
     async def estado(self, inter : disnake.ApplicationCommandInteraction, estado : str):
         await inter.response.defer()
-        membros = carregar()
-        membros[str(inter.author.id)]["estado"] = estado.strip()
+        
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.estado = estado.strip()
+        self.usuario_servico.salvar_usuario(usuario)
+        
         await inter.edit_original_message("Estado registrado com sucesso!")
-        salvar(membros)
 
     @commands.slash_command(name="twitter", description="Registra sua conta no site com X no perfil")
-    async def nome(self, inter : disnake.ApplicationCommandInteraction, link : str = None, usuario : str = None):
+    async def nome(self, inter : disnake.ApplicationCommandInteraction, 
+                   twitter : str, tipo = commands.Param(choices=["Link", "Usuário"])):
         await inter.response.defer()
-
-        if link == usuario == None:
-            await inter.edit_original_message("Coloque o link para seu perfil ou o nome de seu usuário do Twitter")
-            return
         
-        if link != None:
-            link = link.strip()
-            link_valido = validar_link(link)
-            if not link_valido:
-                await inter.edit_original_message("Coloque um link válido.")
-                return
-            
-            usuario = link
+        twitter = twitter.strip()
+        
+        if tipo == "Link" and not validar_link(twitter):
+            await inter.edit_original_message("Coloque um link válido.")
+            return
 
-        membros = carregar()
-        membros[str(inter.author.id)]["twitter"] = usuario.strip()
-        salvar(membros)
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.twitter = twitter.strip()
+        self.usuario_servico.salvar_usuario(usuario)
 
         await inter.edit_original_message("Twitter registrado com sucesso!")
         
@@ -164,88 +114,85 @@ class Perfil(commands.Cog):
         await inter.response.defer()
 
         link = link.strip()
-        link_valido = validar_link(link)
-        if not link_valido:
+        if not validar_link(link):
             await inter.edit_original_message("Coloque um link válido.")
             return
 
-        membros = carregar()
-        membros[str(inter.author.id)]["lista_animes"] = link
-        salvar(membros)
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.lista_animes = link
+        self.usuario_servico.salvar_usuario(usuario)
 
         await inter.edit_original_message("Lista de animes registrada com sucesso!")
         
     @commands.slash_command(name="steam", description="Registra sua conta da Steam no perfil")
-    async def steam(self, inter : disnake.ApplicationCommandInteraction, link : str = None, usuario : str = None):
+    async def steam(self, inter : disnake.ApplicationCommandInteraction, 
+                    steam : str, tipo = commands.Param(choices=["Link", "Usuário"])):
         await inter.response.defer()
-
-        if link == usuario == None:
-            await inter.edit_original_message("Coloque o link para seu perfil ou o nome de seu usuário da Steam")
-            return
         
-        if link != None:
-            link = link.strip()
-            link_valido = validar_link(link)
-            if not link_valido:
-                await inter.edit_original_message("Coloque um link válido.")
-                return
-            
-            usuario = link
+        steam = steam.strip()
 
-        membros = carregar()
-        membros[str(inter.author.id)]["steam"] = usuario.strip()
-        salvar(membros)
+        if tipo == "Link" and not validar_link(steam):
+            await inter.edit_original_message("Coloque um link válido.")
+            return
+
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.steam = steam
+        self.usuario_servico.salvar_usuario(usuario)
 
         await inter.edit_original_message("Steam registrada com sucesso!")
 
     @commands.slash_command(name="insta", description="Registra sua conta do Instagram no perfil")
-    async def insta(self, inter : disnake.ApplicationCommandInteraction, link : str = None, usuario : str = None):
+    async def insta(self, inter : disnake.ApplicationCommandInteraction, 
+                    instagram : str, tipo = commands.Param(choices=["Link", "Usuário"])):
         await inter.response.defer()
-
-        if link == usuario == None:
-            await inter.edit_original_message("Coloque o link para seu perfil ou o nome de seu usuário do Instagram")
-            return
         
-        if link != None:
-            link = link.strip()
-            link_valido = validar_link(link)
-            if not link_valido:
-                await inter.edit_original_message("Coloque um link válido.")
-                return
-            
-            usuario = link
+        instagram = instagram.strip()
 
-        membros = carregar()
-        membros[str(inter.author.id)]["instagram"] = usuario.strip()
-        salvar(membros)
+        if tipo == "Link" and not validar_link(instagram):
+            await inter.edit_original_message("Coloque um link válido.")
+            return
+
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.instagram = instagram
+        self.usuario_servico.salvar_usuario(usuario)
 
         await inter.edit_original_message("Instagram registrado com sucesso!")
         
     @commands.slash_command(name="osu", description="Registra sua conta do Osu! no perfil")
-    async def osu(self, inter : disnake.ApplicationCommandInteraction, link : str):
+    async def osu(self, inter : disnake.ApplicationCommandInteraction, 
+                  osu : str, tipo = commands.Param(choices=["Link", "Usuário"])):
         await inter.response.defer()
 
-        link = link.strip()
-        link_valido = validar_link(link)
-        if not link_valido:
+        osu = osu.strip()
+        if tipo == "Link" and not validar_link(osu):
             await inter.edit_original_message("Coloque um link válido.")
             return
 
-        membros = carregar()
-        membros[str(inter.author.id)]["osu"] = link
-        salvar(membros)
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.osu = osu
+        self.usuario_servico.salvar_usuario(usuario)
 
         await inter.edit_original_message("Osu! registrado com sucesso!")
 
     @commands.slash_command(name="genshin", description="Registra seu UID do Genshin no perfil")
-    async def genshin(self, inter : disnake.ApplicationCommandInteraction, uid : str):
+    async def genshin(self, inter : disnake.ApplicationCommandInteraction, uid : int):
         await inter.response.defer()
 
-        membros = carregar()
-        membros[str(inter.author.id)]["genshin_uid"] = uid
-        salvar(membros)
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.genshin_uid = str(uid)
+        self.usuario_servico.salvar_usuario(usuario)
 
         await inter.edit_original_message("Genshin UID registrado com sucesso!")
+
+    @commands.slash_command(name="honkai", description="Registra seu UID do Honkai no perfil")
+    async def honkai(self, inter : disnake.ApplicationCommandInteraction, uid : int):
+        await inter.response.defer()
+
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
+        usuario.honkai_uid = str(uid)
+        self.usuario_servico.salvar_usuario(usuario)
+
+        await inter.edit_original_message("Honkai UID registrado com sucesso!")
 
     @commands.slash_command(name="time", description="Adiciona seu time no perfil no perfil")
     async def time(self, inter : disnake.ApplicationCommandInteraction):
@@ -265,22 +212,22 @@ class Perfil(commands.Cog):
                 await inter_select.response.edit_message("\u3164", view=None)
                 time = select.values[0]
                 
-                membros = carregar()
+                usuario = self.usuario_servico.pegar_usuario(inter_select.user)
                 if time == "Remover":
-                    time_registrado = membros[str(inter_select.user.id)]["time"]
-                    if time_registrado == None:
+                    if usuario.time == None:
                         await inter_select.edit_original_message(f"Você não possui nenhum time selecinado.")
                         return
                     
-                    membros[str(inter_select.user.id)]["time"] = None
-                    salvar(membros)
                     await inter_select.edit_original_message(
-                        f"O time {time_registrado} foi removido do perfil com sucesso!")
-                    return
-                
-                membros[str(inter_select.user.id)]["time"] = time
-                salvar(membros)
-                await inter_select.edit_original_message(f"O time {time} foi selecionado para o perfil!")
+                        f"O time {usuario.time} foi removido do perfil com sucesso!")
+                    
+                    usuario.time = None
+                    
+                else:
+                    usuario.time = time
+                    await inter_select.edit_original_message(f"O time {time} foi selecionado para o perfil!")
+                    
+                self.usuario_servico.salvar_usuario(usuario)
         
         select.callback = selecao_callback
         
@@ -293,23 +240,22 @@ class Perfil(commands.Cog):
                            time = commands.Param(choices=[e.value["nome"] for e in Time if e.value["nome"] != "Remover"])):
         await inter.response.defer()
         
-        membros = carregar()
+        usuarios = sorted(
+            filter(
+                lambda usuario: usuario.time != None,
+                self.usuario_servico.pegar_todos_usuarios()
+                ),
+            key=lambda usuario: (usuario.time, usuario.display_name)
+            )
         
-        times = {}
-        for id, info in membros.items():
-            if info["time"] != None:
-                if info["time"] not in times:
-                    times[info["time"]] = []
-                times[info["time"]].append(self.bot.get_user(int(id)))
-        
-        times = dict(sorted(times.items()))
+        times = {
+            key: [usuario.id for usuario in usuarios if usuario.time == key]
+            for key in [usuario.time for usuario in usuarios]
+        }
         
         for time_dict, torcedores in times.items():
-            if torcedores != []:
-                torcedores = sorted(torcedores, key=lambda x: x.display_name)
-                
-                for pos, torcedor in enumerate(torcedores):
-                    times[time_dict][pos] = f"<@{torcedor.id}>"
+            for pos, torcedor in enumerate(torcedores):
+                times[time_dict][pos] = f"<@{torcedor}>"
                     
         embed = disnake.Embed(
             title="Arquibancada da União Sinistra",
@@ -332,5 +278,5 @@ class Perfil(commands.Cog):
         await inter.edit_original_message(embed=embed)
     
    
-def setup(bot: commands.Bot):
+def setup(bot: Eery):
     bot.add_cog(Perfil(bot))

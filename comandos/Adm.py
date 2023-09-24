@@ -2,13 +2,14 @@ import json
 import disnake
 from disnake.ext import commands
 import requests
-from comandos.Xp import obter_xp
+from comandos.xp_funcoes import obter_xp
+from entidades.Eery import Eery
 
 from save_and_load import carregar, salvar
 
 
 class Adm(commands.Cog):
-    def __init__(self, bot : commands.Bot):
+    def __init__(self, bot : Eery):
         self.bot = bot
     
     @commands.command(name="admhelp", description="Comando de help pros adm")
@@ -289,5 +290,5 @@ class Adm(commands.Cog):
         await ctx.send(f"Valor {valor} de canal foi deletado!")
         
 
-def setup(bot : commands.Bot):
+def setup(bot : Eery):
     bot.add_cog(Adm(bot))
