@@ -10,7 +10,7 @@ from entidades.Eery import Eery
 class Comandos(commands.Cog):
     def __init__(self, bot : Eery):
         self.bot = bot
-        self.usuario_servicos = bot.usuario_servico
+        self.usuario_servico = bot.usuario_servico
         
     @commands.slash_command(name="roll", description="Gera um número aleatório")
     async def roll(self, inter : disnake.ApplicationCommandInteraction, max : int = 100):
@@ -43,7 +43,7 @@ class Comandos(commands.Cog):
         usuarios = sorted(
             filter(
                 lambda usuario: usuario.aniversario != None,
-                self.usuario_servicos.pegar_todos_usuarios()
+                self.usuario_servico.pegar_todos_usuarios()
                 ),
             key=lambda usuario: (usuario.aniversario[3:], usuario.aniversario[:2])
             )
@@ -80,9 +80,9 @@ class Comandos(commands.Cog):
             await inter.edit_original_message("Você não possui permissão para alterar os Bruno points.")
             return
         
-        usuario = self.usuario_servicos.pegar_usuario_valido(inter.user, user)
+        usuario = self.usuario_servico.pegar_usuario_valido(inter.user, user)
         usuario.bruno_points += int(pontos)
-        self.usuario_servicos.salvar_usuario(usuario)
+        self.usuario_servico.salvar_usuario(usuario)
         
         await inter.channel.send(f"Atualizado os Bruno Point de {usuario.name} em {pontos} pontos. Agora ele(a) possui {usuario.bruno_points} pontos.")
 
@@ -203,9 +203,9 @@ class Comandos(commands.Cog):
     async def nome(self, inter : disnake.ApplicationCommandInteraction, nome : str):
         await inter.response.defer()
         
-        usuario = self.usuario_servicos.pegar_usuario(inter.user)
+        usuario = self.usuario_servico.pegar_usuario(inter.user)
         usuario.nome = nome.strip().capitalize()
-        self.usuario_servicos.salvar_usuario(usuario)
+        self.usuario_servico.salvar_usuario(usuario)
         
         await inter.edit_original_message("Nome adicionado com sucesso!")
 
