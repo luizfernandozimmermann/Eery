@@ -4,13 +4,13 @@ from disnake.ext import commands
 import requests
 from comandos.xp_funcoes import obter_xp
 from entidades.Eery import Eery
-
 from save_and_load import carregar, salvar
 
 
 class Adm(commands.Cog):
     def __init__(self, bot : Eery):
         self.bot = bot
+        self.usuario_servico = bot.usuario_servico
     
     @commands.command(name="admhelp", description="Comando de help pros adm")
     async def admhelp(self, ctx : commands.Context):
@@ -114,66 +114,66 @@ class Adm(commands.Cog):
         if ctx.author.id != self.bot.owner.id:
             return
         
-        membros = carregar()
-        for id, conteudo in membros.items():
-            membros[id]["xp"] = 0
-            
-        salvar(membros)
+        usuarios = self.usuario_servico.pegar_todos_usuarios()
+        for usuario in usuarios:
+            usuario.xp = 0
+        self.usuario_servico.salvar_todos_usuarios(usuarios)    
+        
         await ctx.send("AGORA DEU O CARAIO MEMO VIU, RESETOU FOI TUDO, RESETOU A PORRA TODA")
     
     @commands.command(name="setlvl", description="Seta o lvl da pessoa mencionada")
-    async def setlvl(self, ctx : commands.Context, usuario : disnake.User | int, level : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
-        
+    async def setlvl(self, ctx : commands.Context, membro : disnake.Member | int, level : int):
         if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] = obter_xp(level)
-        salvar(membros)
+        if type(membro) == int:
+            membro = self.bot.get_user(membro)
+        
+        usuario = self.usuario_servico.pegar_usuario(membro)
+        usuario.xp = obter_xp(level)
+        self.usuario_servico.salvar_usuario(usuario)
         
         await ctx.send("Feito!")
     
     @commands.command(name="setxp", description="Seta o xp da pessoa mencionada")
-    async def setxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
-        
+    async def setxp(self, ctx : commands.Context, membro : disnake.Member | int, quantidade : int):
         if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] = quantidade
-        salvar(membros)
+        if type(membro) == int:
+            membro = self.bot.get_user(membro)
+        
+        usuario = self.usuario_servico.pegar_usuario(membro)
+        usuario.xp = quantidade
+        self.usuario_servico.salvar_usuario(usuario)
         
         await ctx.send("Feito!")
         
     @commands.command(name="addxp", description="Adiciona xp para pessoa mencionada")
-    async def addxp(self, ctx : commands.Context, usuario : disnake.User | int, quantidade : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
-        
+    async def addxp(self, ctx : commands.Context, membro : disnake.Member | int, quantidade : int):
         if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] += quantidade
-        salvar(membros)
+        if type(membro) == int:
+            membro = self.bot.get_user(membro)
+        
+        usuario = self.usuario_servico.pegar_usuario(membro)
+        usuario.xp += quantidade
+        self.usuario_servico.salvar_usuario(usuario)
         
         await ctx.send("Feito!")
     
     @commands.command(name="setlvlexp", description="Seta o lvl e xp da pessoa mencionada")
-    async def setlvlexp(self, ctx : commands.Context, usuario : disnake.User | int, level : int, xp : int):
-        if type(usuario) == int:
-            usuario = self.bot.get_user(usuario)
-        
+    async def setlvlexp(self, ctx : commands.Context, membro : disnake.Member | int, level : int, xp : int):
         if ctx.author.id not in [self.bot.owner.id, ctx.guild.owner.id]:
             return
         
-        membros = carregar()
-        membros[str(usuario.id)]["xp"] = obter_xp(level) + xp
-        salvar(membros)
+        if type(membro) == int:
+            membro = self.bot.get_user(membro)
+        
+        usuario = self.usuario_servico.pegar_usuario(membro)
+        usuario.xp = obter_xp(level) + xp
+        self.usuario_servico.salvar_usuario(usuario)
     
         await ctx.send("Feito!")
         
