@@ -59,28 +59,6 @@ class Adm(commands.Cog):
                 )
             salvar(content, arquivo=arquivo)
 
-    @commands.command(name="addatr", description="Adiciona atributo para o banco")
-    async def addatr(self, ctx : commands.Context, atr : str, valor = None):
-        if ctx.author.id == self.bot.owner.id:
-            membros = carregar()
-            for id, conteudo in membros.items():
-                if atr not in conteudo:
-                    conteudo[atr] = eval(str(valor))
-                    membros[id] = conteudo
-            salvar(membros)
-            await ctx.channel.send("belezinha")
-    
-    @commands.command(name="rematr", description="Remove atributo do banco")
-    async def rematr(self, ctx : commands.Context, atr : str):
-        if ctx.author.id == self.bot.owner.id:
-            membros = carregar()
-            for id, conteudo in membros.items():
-                if atr in conteudo:
-                    del conteudo[atr]
-                    membros[id] = conteudo
-            salvar(membros)
-            await ctx.channel.send("belezinha")
-
     @commands.command(name="config", description="Troca (ou mostra) config")
     async def config(self, ctx : commands.Context, *configs : str):
         if ctx.author.id == self.bot.owner.id:

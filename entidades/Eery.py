@@ -5,8 +5,8 @@ import re
 import disnake
 from disnake.ext import commands, tasks
 from comandos.xp_funcoes import obter_level
+from save_and_load import carregar
 
-from save_and_load import carregar, salvar
 from servicos.UsuarioServico import UsuarioServico
 
 
@@ -17,10 +17,10 @@ class Eery(commands.Bot):
         
         self.usuario_servico = UsuarioServico(self)
         self.configs = carregar("configs")
+        self.valor_canais_xp = carregar("valor_canais_xp")
         self.remove_command("help")
         self.load_extensions("comandos")
-        
-    
+       
     @tasks.loop(seconds=59)
     async def loop_1m(self):
         self.xp_adicionado = []
@@ -67,10 +67,10 @@ class Eery(commands.Bot):
                 dia = datetime.now(timezone.utc)
                 mes = '%02d' % dia.month
                 dia = '%02d' % dia.day
-                membros = carregar()
-                for key, niver in membros.items():
-                    if niver["aniversario"] == dia + "/" + mes:
-                        await self.channel_geral.send("<@" + key + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
+                usuarios = self.usuario_servico.pegar_todos_usuarios()
+                for usuario in usuarios:
+                    if usuario.aniversario == dia + "/" + mes:
+                        await self.channel_geral.send("<@" + usuario.id + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
                         break
 
     async def on_slash_command_error(self, interaction : disnake.ApplicationCommandInteraction, 
@@ -100,27 +100,26 @@ class Eery(commands.Bot):
     async def on_message(self, message : disnake.message.Message):
         if not message.author.bot:
             if self.configs["xp"]["ativo"] and message.author.id not in self.xp_adicionado:
-                valor_canais_xp = carregar("valor_canais_xp")
-                membros = carregar()
+                usuario = self.usuario_servico.pegar_usuario(message.author)
                 
                 valor_xp = 0
-                for valor_canal, lista_canais in valor_canais_xp.items():
+                for valor_canal, lista_canais in self.valor_canais_xp.items():
                     if valor_xp < float(valor_canal):
                         if message.channel.id in lista_canais:
                             valor_xp = float(valor_canal)
                 valor_xp = 1 if valor_xp == 0 else valor_xp
-                xp = membros[str(message.author.id)]["xp"]
+                xp = usuario.xp
             
                 lvl_anterior = obter_level(xp)[0]
                 xp += randint(int(15 * valor_xp), int(25 * valor_xp)) * self.configs["xp"]["multiplicador"]
                 lvl_posterior = obter_level(xp)[0]
                 
-                membros[str(message.author.id)]["xp"] = xp
+                usuario.xp = xp
                 canal_lvl_up = self.get_channel(self.configs["canais"]["xp"])
                 if lvl_anterior != lvl_posterior:
                     await canal_lvl_up.send(f"<@{message.author.id}> acaba de upar para o level {lvl_posterior}!")
                 
-                salvar(membros)
+                self.usuario_servico.salvar_usuario(usuario)
                 
                 self.xp_adicionado.append(message.author.id)
             
