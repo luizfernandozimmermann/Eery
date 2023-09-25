@@ -68,9 +68,8 @@ class Comandos(commands.Cog):
             
             embed.title += f" do mês {meses[mes - 1]}"
         
-        
         for usuario in usuarios:
-            embed.description += "\n".join(f"<@{usuario.id}>: {usuario.aniversario}")
+            embed.description += f"\n<@{usuario.id}>: {usuario.aniversario}"
 
         await inter.edit_original_message(embed=embed)
 
