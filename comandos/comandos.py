@@ -6,6 +6,8 @@ from disnake.ext import commands
 import requests
 from entidades.Eery import Eery
 
+from save_and_load import carregar
+
 
 class Comandos(commands.Cog):
     def __init__(self, bot : Eery):

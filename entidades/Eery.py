@@ -92,9 +92,8 @@ class Eery(commands.Bot):
     async def on_ready(self):
         self.loop_1m.start()
         
-        self.usuario_servico.salvar_todos_usuarios(self.usuario_servico.pegar_todos_usuarios())
-        
         self.channel_geral = self.get_channel(self.configs["canais"]["geral"])
+        self.canal_lvl_up = self.get_channel(self.configs["canais"]["xp"])
         self.loop.create_task(self.cogs["Twitch"].check_twitch_stream())
 
     async def on_message(self, message : disnake.message.Message):
@@ -115,9 +114,8 @@ class Eery(commands.Bot):
                 lvl_posterior = obter_level(xp)[0]
                 
                 usuario.xp = xp
-                canal_lvl_up = self.get_channel(self.configs["canais"]["xp"])
                 if lvl_anterior != lvl_posterior:
-                    await canal_lvl_up.send(f"<@{message.author.id}> acaba de upar para o level {lvl_posterior}!")
+                    await self.canal_lvl_up.send(f"<@{message.author.id}> acaba de upar para o level {lvl_posterior}!")
                 
                 self.usuario_servico.salvar_usuario(usuario)
                 
