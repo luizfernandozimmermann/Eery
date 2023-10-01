@@ -12,6 +12,29 @@ class Adm(commands.Cog):
         self.bot = bot
         self.usuario_servico = bot.usuario_servico
     
+    
+    @commands.slash_command(name="adm", description="Comando para manutenção do bot, apenas o desenvolvedor pode utilizar")
+    async def adm(self, inter : disnake.ApplicationCommandInteraction, comando : str, assincrono : bool = True):
+        if inter.author.id not in [self.bot.owner.id, inter.guild.owner.id]:
+            await inter.response.send_message("Você não tem permissão para usar esse comando.")
+            return
+        if not assincrono:
+            exec(comando)
+            return
+        await eval(comando)
+
+    @commands.slash_command(name="msg", description="Comando para a Eery falar algo, apenas alguns podem utilizar :)")
+    async def msg(self, inter : disnake.ApplicationCommandInteraction, mensagem : str, contem_variavel : bool = False):
+        if inter.author.id not in [self.bot.owner.id, inter.guild.owner.id]:
+            await inter.response.send_message("Você não tem permissão para usar esse comando.")
+            return
+        
+        if contem_variavel:
+            mensagem = eval(f"f'{mensagem}'")
+            
+        await inter.channel.send(mensagem)
+
+    
     @commands.command(name="admhelp", description="Comando de help pros adm")
     async def admhelp(self, ctx : commands.Context):
         if ctx.author.id in [self.bot.owner.id, ctx.guild.owner.id]:

@@ -73,42 +73,6 @@ class Comandos(commands.Cog):
 
         await inter.edit_original_message(embed=embed)
 
-    @commands.slash_command(name="bruno", description="Comando para adicionar ou remover Bruno points da pessoa mencionada")
-    async def bruno(self, inter : disnake.ApplicationCommandInteraction, user : disnake.User , pontos : int):
-        await inter.response.defer()
-
-        if inter.author.id not in [249674362410631169, self.bot.owner.id]:
-            await inter.edit_original_message("Você não possui permissão para alterar os Bruno points.")
-            return
-        
-        usuario = self.usuario_servico.pegar_usuario_valido(inter.user, user)
-        usuario.bruno_points += int(pontos)
-        self.usuario_servico.salvar_usuario(usuario)
-        
-        await inter.channel.send(f"Atualizado os Bruno Point de {usuario.name} em {pontos} pontos. Agora ele(a) possui {usuario.bruno_points} pontos.")
-
-    @commands.slash_command(name="adm", description="Comando para manutenção do bot, apenas o desenvolvedor pode utilizar")
-    async def adm(self, inter : disnake.ApplicationCommandInteraction, comando : str, assincrono : bool = True):
-        if inter.author.id not in [self.bot.owner.id, inter.guild.owner.id]:
-            await inter.response.send_message("Você não tem permissão para usar esse comando.")
-            return
-        if not assincrono:
-            exec(comando)
-            return
-        await eval(comando)
-
-    @commands.slash_command(name="msg", description="Comando para a Eery falar algo, apenas alguns podem utilizar :)")
-    async def msg(self, inter : disnake.ApplicationCommandInteraction, mensagem : str, contem_variavel : bool = False):
-        if inter.author.id not in [self.bot.owner.id, inter.guild.owner.id]:
-            await inter.response.send_message("Você não tem permissão para usar esse comando.")
-            return
-        
-        if contem_variavel:
-            mensagem = eval(f"f'{mensagem}'")
-            
-        await inter.channel.send(mensagem)
-
-
     async def sleep_check_and_delete_role(self, role):
         await asyncio.sleep(10)
         return await self.check_and_delete_role(role)

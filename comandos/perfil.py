@@ -82,6 +82,20 @@ class Perfil(commands.Cog):
 
         await inter.edit_original_message("Aniversário registrado com sucesso!")
 
+    @commands.slash_command(name="bruno", description="Comando para adicionar ou remover Bruno points da pessoa mencionada")
+    async def bruno(self, inter : disnake.ApplicationCommandInteraction, user : disnake.User , pontos : int):
+        await inter.response.defer()
+
+        if inter.author.id not in [249674362410631169, self.bot.owner.id]:
+            await inter.edit_original_message("Você não possui permissão para alterar os Bruno points.")
+            return
+        
+        usuario = self.usuario_servico.pegar_usuario_valido(inter.user, user)
+        usuario.bruno_points += int(pontos)
+        self.usuario_servico.salvar_usuario(usuario)
+        
+        await inter.channel.send(f"Atualizado os Bruno Point de {usuario.name} em {pontos} pontos. Agora ele(a) possui {usuario.bruno_points} pontos.")
+
     @commands.slash_command(name="estado", description="Registra seu Estado no perfil")
     async def estado(self, inter : disnake.ApplicationCommandInteraction, estado : str):
         await inter.response.defer()
