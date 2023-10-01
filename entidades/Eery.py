@@ -136,6 +136,9 @@ class Eery(commands.Bot):
                 if "feliz ano novo" in message.content.lower():
                     await message.reply("<@" + str(autor) + "> Feliz ano novo para você !!! Espero que você tenha um ótimo 2012!!!")
             
+            if f"<@{self.user.id}> <@{self.user.id}>" in message.content:
+                await message.channel.send(":p")
+            
             reacoes = self.configs["reacoes"]
             
             for chave, reacao in reacoes.items():
