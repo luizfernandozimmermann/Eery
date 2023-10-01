@@ -12,6 +12,26 @@ class Adm(commands.Cog):
         self.bot = bot
         self.usuario_servico = bot.usuario_servico
     
+    @commands.slash_command(name="spam", description="Spam de mensagem. Representar variavel com {v}")
+    async def spam(self, inter : disnake.ApplicationCommandInteraction, 
+                   mensagem : str, quantidade : int, variavel : str = None):
+        if inter.author.id not in [self.bot.owner.id, inter.guild.owner.id]:
+            await inter.response.send_message("Você não tem permissão para usar esse comando.")
+            return
+        
+        if variavel == None:
+            for i in range(quantidade):
+                await inter.channel.send(mensagem)
+            return
+        
+        pos_var = 0
+        variavel = variavel.split()
+        for i in range(quantidade):
+            v = variavel[pos_var]
+            pos_var += 1
+            if pos_var == len(variavel):
+                pos_var = 0
+            await inter.channel.send(eval(f"f'{mensagem}'"))
     
     @commands.slash_command(name="adm", description="Comando para manutenção do bot, apenas o desenvolvedor pode utilizar")
     async def adm(self, inter : disnake.ApplicationCommandInteraction, comando : str, assincrono : bool = True):
