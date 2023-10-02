@@ -3,12 +3,12 @@ import disnake
 from disnake.ext import commands
 import requests
 from comandos.xp_funcoes import obter_xp
-from entidades.Eery import Eery
+from entidades.EeryType import EeryType
 from save_and_load import carregar, salvar
 
 
 class Adm(commands.Cog):
-    def __init__(self, bot : Eery):
+    def __init__(self, bot : EeryType):
         self.bot = bot
         self.usuario_servico = bot.usuario_servico
     
@@ -310,6 +310,3 @@ class Adm(commands.Cog):
         salvar(valor_canais_xp, "valor_canais_xp")
         await ctx.send(f"Valor {valor} de canal foi deletado!")
         
-
-def setup(bot : Eery):
-    bot.add_cog(Adm(bot))

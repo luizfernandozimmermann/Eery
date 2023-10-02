@@ -19,7 +19,3 @@ def obter_xp(level : int):
         xp_requerido = 5 * (level ** 2) + (50 * level) + 100
     
     return xp
-
-
-def setup(bot):
-    pass

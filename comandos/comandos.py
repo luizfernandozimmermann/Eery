@@ -4,13 +4,13 @@ import re
 import disnake
 from disnake.ext import commands
 import requests
-from entidades.Eery import Eery
+from entidades.EeryType import EeryType
 
 from save_and_load import carregar
 
 
 class Comandos(commands.Cog):
-    def __init__(self, bot : Eery):
+    def __init__(self, bot : EeryType):
         self.bot = bot
         self.usuario_servico = bot.usuario_servico
         
@@ -173,7 +173,3 @@ class Comandos(commands.Cog):
         self.usuario_servico.salvar_usuario(usuario)
         
         await inter.edit_original_message("Nome adicionado com sucesso!")
-
-
-def setup(bot: Eery):
-    bot.add_cog(Comandos(bot))

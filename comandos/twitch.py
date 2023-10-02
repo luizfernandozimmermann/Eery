@@ -2,13 +2,13 @@ import asyncio
 import disnake
 from disnake.ext import commands
 import requests
-from entidades.Eery import Eery
+from entidades.EeryType import EeryType
 from entidades.Usuario import Usuario
 from save_and_load import carregar
 
 
 class Twitch(commands.Cog):
-    def __init__(self, bot : Eery):
+    def __init__(self, bot : EeryType):
         self.bot = bot
         self.usuario_servico = bot.usuario_servico
         
@@ -74,7 +74,3 @@ class Twitch(commands.Cog):
         except:
             pass
         
-        
-def setup(bot: Eery):
-    bot.add_cog(Twitch(bot))
-    

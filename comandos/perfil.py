@@ -1,8 +1,9 @@
 from enum import Enum
 import disnake
 from disnake.ext import commands
-from entidades.Eery import Eery
 from re import match
+
+from entidades.EeryType import EeryType
 
 
 def validar_link(link : str) -> bool:
@@ -36,7 +37,7 @@ class Time(Enum):
 
 
 class Perfil(commands.Cog):
-    def __init__(self, bot : Eery):
+    def __init__(self, bot : EeryType):
         self.bot = bot
         self.usuario_servico = bot.usuario_servico
         
@@ -291,6 +292,3 @@ class Perfil(commands.Cog):
         
         await inter.edit_original_message(embed=embed)
     
-   
-def setup(bot: Eery):
-    bot.add_cog(Perfil(bot))

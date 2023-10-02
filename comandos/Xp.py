@@ -5,7 +5,7 @@ from disnake.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 import requests
 from comandos.xp_funcoes import obter_level
-from entidades.Eery import Eery
+from entidades.EeryType import EeryType
 from entidades.Usuario import Usuario
 from save_and_load import carregar
 
@@ -104,7 +104,7 @@ def criar_imagem_xp(usuario : Usuario, pos_ranking : int) -> Image.Image:
 
 
 class Xp(commands.Cog):
-    def __init__(self, bot : Eery):
+    def __init__(self, bot : EeryType):
         self.bot = bot
         self.usuario_servico = bot.usuario_servico
             
@@ -161,7 +161,7 @@ class Xp(commands.Cog):
     
     
     class RankingView(disnake.ui.View):
-        def __init__(self, bot : Eery, usuarios : list[Usuario], pagina : int):
+        def __init__(self, bot : EeryType, usuarios : list[Usuario], pagina : int):
             super().__init__(timeout=None)
             self.bot = bot
             
@@ -222,7 +222,3 @@ class Xp(commands.Cog):
                 self.pagina_posterior.disabled = True
             
             await inter.edit_original_message(embed=self.montar_embed(), view=self, file=self.imagem)
-
-
-def setup(bot : Eery):
-    bot.add_cog(Xp(bot))
