@@ -39,7 +39,7 @@ class Jogos(commands.Cog):
                 jogador.inter = inter
                 return
                 
-            self.partida_uno.adicionar_jogador(inter)
+            await self.partida_uno.adicionar_jogador(inter)
             await inter.edit_original_message("Entrou na partida! Espere o criador do jogo iniciar a partida. (Não apague essa mensagem)")
         
         else:

@@ -59,7 +59,8 @@ class JogadorUno():
         async def inicio_partida(self, seu_turno : bool):
             if not seu_turno:
                 self.remove_item(self.botao_comprar)
-            self.atualizar_options(self.jogador.baralho.carta_descarte)
+            else:
+                self.atualizar_options(self.jogador.baralho.carta_descarte)
             self.embed = disnake.Embed(
                 title="Sua mão",
                 colour=disnake.Colour.blurple()
@@ -209,7 +210,10 @@ class JogadorUno():
         async def botao_comprar(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
             await inter.response.defer()
             if self.jogador.partida.quantidade_comprar != 0:
+                self.jogador.partida.quantidade_comprar = 0
                 self.jogador.comprar(self.jogador.partida.quantidade_comprar)
+                self.jogador.partida.pular_jogador()
+                self.jogador.partida.atualizar_jogador_atual()
                 await self.atualizar_mensagem(False)
                 
             else:

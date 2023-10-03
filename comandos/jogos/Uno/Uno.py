@@ -24,39 +24,33 @@ class Uno():
         
         self.view = self.UnoView(mensagem_jogo, bot, self)
         
-    def adicionar_jogador(self, inter : disnake.ApplicationCommandInteraction):
+    async def adicionar_jogador(self, inter : disnake.ApplicationCommandInteraction):
         self.jogadores.append(JogadorUno(inter, self.baralho, self.bot, self))
+        await self.view.atualizar_jogo()
      
     async def jogar(self, carta : Carta):
         self.baralho.jogar(carta)
         
-        # TODO: problemas. fazer o jogador comprar quando nao puder rebater +2 ou +4.
+        # aplica regras de carta
         quantidade_pular = 1
         if carta.simbolo == "bloqueio":
-            pass
+            quantidade_pular += 1
         
+        if "+" in carta.simbolo:
+            self.quantidade_comprar += int(carta.simbolo)
+        
+        elif carta.simbolo == "reverse":
+            self.inverso = not self.inverso
+            
         self.pular_jogador(quantidade_pular)
-        # aplica regras de carta
-        
         await self.atualizar_jogador_atual()
-        await self.view.atualizar_jogo()
           
     async def atualizar_jogador_atual(self):
         jogador_atual = self.jogadores[self.atual]
-        consegue_jogar = await jogador_atual.atualizar_status_jogar(self.quantidade_comprar != 0)
-        if not consegue_jogar:
-            if self.quantidade_comprar != 0:
-                jogador_atual.comprar(self.quantidade_comprar)
-                self.quantidade_comprar = 0
+        await jogador_atual.atualizar_status_jogar(self.quantidade_comprar != 0)
+        await self.view.atualizar_jogo()
                 
-                pular = -1 if self.inverso else 1
-                self.pular_jogador(pular)
-                
-            else:
-                # TODO: Fazer comprar até conseguir
-                jogador_atual.comprar()
-                
-    def pular_jogador(self, quantidade : int):
+    def pular_jogador(self, quantidade : int = 1):
         if self.inverso:
             for i in range(quantidade):
                 self.atual -= 1
