@@ -28,8 +28,8 @@ class JogadorUno():
         await self.view.atualizar_mensagem(seu_turno=True, comprar_ativo=comprar_ativo)
         
     async def jogar(self, carta : Carta):
-        await self.view.atualizar_mensagem(False)
         await self.partida.jogar(carta)
+        await self.view.atualizar_mensagem(False)
 
     def comprar(self, quantidade : int) -> Carta | list[Carta]:
         cartas_pegas = []
@@ -213,7 +213,7 @@ class JogadorUno():
                 self.jogador.partida.quantidade_comprar = 0
                 self.jogador.comprar(self.jogador.partida.quantidade_comprar)
                 self.jogador.partida.pular_jogador()
-                self.jogador.partida.atualizar_jogador_atual()
+                await self.jogador.partida.atualizar_jogador_atual()
                 await self.atualizar_mensagem(False)
                 
             else:

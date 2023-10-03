@@ -32,6 +32,7 @@ class Uno():
         self.baralho.jogar(carta)
         
         # aplica regras de carta
+        # TODO: arrumar carta bloqueio, ele ta fazendo o jogador escolher a cor (?) (teste feito com 2 pessoas apenas)
         quantidade_pular = 1
         if carta.simbolo == "bloqueio":
             quantidade_pular += 1
