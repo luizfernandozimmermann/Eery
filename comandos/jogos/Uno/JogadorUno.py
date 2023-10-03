@@ -17,39 +17,86 @@ class JogadorUno(disnake.ui.View):
         self.bot = bot
         self.mao = self.Mao(bot)
         self.partida = partida
+        self.selects : list[disnake.ui.Select] = []
+        self.botoes = [self.botao_amarelo, self.botao_azul, self.botao_verde, self.botao_vermelho]
         
     async def inicio_partida(self, seu_turno : bool):
         self.mao.cartas = self.baralho.pegar_mao()
-        self.mao.atualizar_options(self)
-        embed = disnake.Embed(
+        self.mao.atualizar_options(self, self.baralho.carta_descarte)
+        self.embed = disnake.Embed(
             title="Sua mão",
             colour=disnake.Colour.blurple()
         )
-        embed.set_image("attachment://image.png")
+        self.embed.set_image("attachment://image.png")
         await self.inter.edit_original_message(
-            content="Seu turno" if seu_turno else "Aguarde seu turno", embed=embed, view=self, file=self.mao.gerar_imagem())
+            content="Seu turno" if seu_turno else "Aguarde seu turno", embed=self.embed, view=self, file=self.mao.gerar_imagem())
         
-    async def atualizar_mensagem(self, seu_turno : bool):
-        embed = disnake.Embed(
-            title="Sua mão",
-            colour=disnake.Colour.blurple()
-        )
-        embed.set_image("attachment://image.png")
+    async def atualizar_status_jogar(self, comprar_ativo : bool) -> bool:
+        return await self.atualizar_mensagem(seu_turno=True, comprar_ativo=comprar_ativo)
+        
+    async def atualizar_mensagem(self, seu_turno : bool, cor_selecao : bool = False, comprar_ativo : bool = False):
+        content = "Aguarde seu turno"
+        
+        for select in self.selects:
+            self.remove_item(select)
+        self.selects = []
         
         if seu_turno:
-            self.mao.atualizar_options(self)
-            await self.inter.edit_original_message(content="Seu turno", embed=embed, view=self, file=self.mao.gerar_imagem())
-            return
+            content = "Seu turno"
+            if not cor_selecao:
+                consegue_jogar = self.mao.atualizar_options(self, self.baralho.carta_descarte, comprar_ativo)
+                if not consegue_jogar:
+                    return False
+            
+        await self.inter.edit_original_message(
+            content=content, embed=self.embed, view=self, file=self.mao.gerar_imagem())
         
-        await self.inter.edit_original_message(content="Aguarde seu turno", embed=embed, view=None, file=self.mao.gerar_imagem())
+        return True
         
     async def select_callback_jogar(self, inter: disnake.MessageInteraction):
+        await inter.response.defer()
+        
         carta_selecionada = [carta for carta in self.mao.cartas 
                              if inter.values[0] == f"{carta.cor}_{carta.simbolo}"][0]
-        self.baralho.jogar(carta_selecionada)
         self.mao.cartas.remove(carta_selecionada)
+        
+        if not carta_selecionada.especial:
+            await self.jogar(carta_selecionada)
+        else:
+            for botao in self.botoes:
+                botao.carta = carta_selecionada
+                botao.disabled = False
+            await self.atualizar_mensagem(True, True)
+    
+    async def jogar(self, carta : Carta):
+        self.baralho.jogar(carta)
         await self.atualizar_mensagem(False)
-        await self.partida.atualizar_jogo()
+        await self.partida.jogar(carta)
+                
+    async def botao_selecionar_cor_callback(
+            self, button : disnake.ui.Button, 
+            inter : disnake.ApplicationCommandInteraction):
+        await inter.response.defer()
+        for botao in self.botoes:
+            botao.disabled = True
+        button.carta.cor = button.label.lower()
+        await self.jogar(button.carta)
+        
+    @disnake.ui.button(label="Amarelo", style=disnake.ButtonStyle.blurple, emoji="\U0001F7E8", disabled=True)
+    async def botao_amarelo(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
+        await self.botao_selecionar_cor_callback(button, inter)
+        
+    @disnake.ui.button(label="Azul", style=disnake.ButtonStyle.blurple, emoji="\U0001F7E6", disabled=True)
+    async def botao_azul(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
+        await self.botao_selecionar_cor_callback(button, inter)
+        
+    @disnake.ui.button(label="Verde", style=disnake.ButtonStyle.blurple, emoji="\U0001F7E9", disabled=True)
+    async def botao_verde(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
+        await self.botao_selecionar_cor_callback(button, inter)
+        
+    @disnake.ui.button(label="Vermelho", style=disnake.ButtonStyle.blurple, emoji="\U0001F7E5", disabled=True)
+    async def botao_vermelho(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
+        await self.botao_selecionar_cor_callback(button, inter)
         
     class Mao():
         def __init__(self, bot : EeryType):
@@ -78,10 +125,8 @@ class JogadorUno(disnake.ui.View):
                 image_binary.seek(0)
                 return disnake.File(fp=image_binary, filename='image.png')
 
-        def atualizar_options(self, jogador_view : disnake.ui.View, ultima_carta_descarte : Carta):
-            for item in jogador_view.children:
-                jogador_view.remove_item(item)
-            
+        def atualizar_options(self, jogador_view : disnake.ui.View, 
+                              carta_descarte : Carta, comprar_ativo : bool = False) -> bool:
             self.cartas.sort(key=lambda carta: f"{carta.cor}_{carta.simbolo}")
             
             cartas : list[Carta] = []
@@ -92,15 +137,11 @@ class JogadorUno(disnake.ui.View):
                         adicionar = False
                         break
                 
-                if adicionar and (
-                    self_carta.cor == ultima_carta_descarte.cor or 
-                    self_carta.simbolo == ultima_carta_descarte.simbolo or
-                    self_carta.especial
-                ):
+                if adicionar and self.checar_valido(carta_descarte, self_carta, comprar_ativo):
                     cartas.append(self_carta)
             
             for a in range(math.ceil(len(cartas) / 25)):
-                jogador_view.add_item(
+                jogador_view.selects.append(
                     disnake.ui.Select(
                         placeholder="Escolha sua carta!",
                         options= [disnake.SelectOption(
@@ -113,5 +154,24 @@ class JogadorUno(disnake.ui.View):
                             )
                 )
             
-            for item in jogador_view.children:
-                item.callback = jogador_view.select_callback_jogar
+            if jogador_view.selects == []:
+                return False
+            
+            for select in jogador_view.selects:
+                select.callback = jogador_view.select_callback_jogar
+                jogador_view.add_item(select)
+            
+            return True
+
+        def checar_valido(self, carta_descarte : Carta, carta : Carta, comprar_ativo : bool) -> bool:
+            if carta.simbolo == "+4":
+                return True
+            
+            if not comprar_ativo:
+                return carta_descarte.cor == carta.cor or carta_descarte.simbolo == carta.simbolo or carta.simbolo == "multicor"
+            
+            # +2 pra vc
+            if comprar_ativo:
+                #      +2 apenas em cima de +2
+                return carta.simbolo == "+2" and carta_descarte.simbolo == "+2"
+                

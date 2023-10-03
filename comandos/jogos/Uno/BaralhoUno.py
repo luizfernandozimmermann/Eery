@@ -6,10 +6,13 @@ from comandos.jogos.Uno.Carta import Carta
 class BaralhoUno():
     def __init__(self):
         self.cartas : list[Carta] = []
-        self.ultima_carta_descarte = None
+        self.carta_descarte = None
         self.embaralhar()
-        self.jogar(self.cartas[0])
-        self.cartas.remove(self.cartas[0])
+        for carta in self.cartas:
+            if carta.simbolo.isnumeric() and "+" not in carta.simbolo:
+                self.jogar(carta)
+                self.cartas.remove(carta)
+                break
         
     def pegar_mao(self) -> list[Carta]:
         return [self.pegar_carta() for a in range(0, 7)]
@@ -39,11 +42,11 @@ class BaralhoUno():
                     self.cartas.append(Carta(cor=cor, simbolo=simbolo))
                     self.cartas.append(Carta(cor=cor, simbolo=simbolo))
                  
-            if self.ultima_carta_descarte != None:
-                self.cartas.remove(self.ultima_carta_descarte)
+            if self.carta_descarte != None:
+                self.cartas.remove(self.carta_descarte)
                         
         random.shuffle(self.cartas)
     
     def jogar(self, carta : Carta):
-        self.ultima_carta_descarte = carta
+        self.carta_descarte = carta
     

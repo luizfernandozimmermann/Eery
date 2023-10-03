@@ -2,6 +2,7 @@ import io
 import disnake
 
 from comandos.jogos.Uno.BaralhoUno import BaralhoUno
+from comandos.jogos.Uno.Carta import Carta
 from comandos.jogos.Uno.JogadorUno import JogadorUno
 from entidades.EeryType import EeryType
 
@@ -20,6 +21,7 @@ class Uno(disnake.ui.View):
         self.criador_jogo = JogadorUno(inter_jogador, self.baralho, self.bot, self)
         self.jogadores = [self.criador_jogo]
         self.atual = 0
+        self.quantidade_comprar = 0
         self.inverso = False
         
     async def on_timeout(self):
@@ -34,7 +36,18 @@ class Uno(disnake.ui.View):
             colour=disnake.Colour.blue()
         )
         if self.iniciado:
+            embed.title += f"Esperando jogada de {self.jogadores[self.atual].discord.display_name}"
+            
+            sinal = " > " if not self.inverso else " < "
+            embed.description = "Ordem de jogadores: " + \
+                f"..{sinal}{sinal.join([f'<@>{jogador.discord.id}' for jogador in self.jogadores])}{sinal}.."
             embed.title += f" - Vez de {self.jogadores[self.atual].discord.display_name}"
+            
+            if self.baralho.carta_descarte.especial:
+                embed.description += f"\nCor selecionada: {self.baralho.carta_descarte.cor.capitalize()}"
+            if self.quantidade_comprar != 0:
+                embed.description += f"\nO próximo irá comprar {self.quantidade_comprar} cartas!"
+                
             embed.set_image("attachment://image.png")
         
         else:
@@ -46,13 +59,52 @@ class Uno(disnake.ui.View):
     async def atualizar_jogo(self):
         if self.iniciado:
             with io.BytesIO() as image_binary:
-                self.baralho.primeira_carta.imagem.save(image_binary, 'PNG')
+                self.baralho.carta_descarte.imagem.save(image_binary, 'PNG')
                 image_binary.seek(0)
                 file = disnake.File(fp=image_binary, filename='image.png')
             await self.mensagem.edit(embed=self.gerar_embed(), view=self, file=file)
             return
         await self.mensagem.edit(embed=self.gerar_embed(), view=self)
+        
+    async def jogar(self, carta : Carta):
+        # TODO: problemas. fazer o jogador comprar quando nao puder rebater +2 ou +4.
+        quantidade_pular = 1
+        if carta.simbolo == "bloqueio":
+            pass
+        
+        self.pular_jogador(quantidade_pular)
+        # aplica regras de carta
+        
+        await self.atualizar_jogador_atual()
+        await self.atualizar_jogo()
           
+    async def atualizar_jogador_atual(self):
+        jogador_atual = self.jogadores[self.atual]
+        consegue_jogar = await jogador_atual.atualizar_status_jogar(self.quantidade_comprar != 0)
+        if not consegue_jogar:
+            if self.quantidade_comprar != 0:
+                jogador_atual.comprar(self.quantidade_comprar)
+                self.quantidade_comprar = 0
+                
+                pular = -1 if self.inverso else 1
+                self.pular_jogador(pular)
+                
+            else:
+                # TODO: Fazer comprar até conseguir
+                jogador_atual.comprar()
+                
+    def pular_jogador(self, quantidade : int):
+        if self.inverso:
+            for i in range(quantidade):
+                self.atual -= 1
+                if self.atual < 0:
+                    self.atual = len(self.jogadores) - 1
+        else:
+            for i in range(quantidade):
+                self.atual += 1
+                if self.atual >= len(self.jogadores):
+                    self.atual = 0
+        
     async def comecar_jogo(self):
         self.iniciado = True
         for jogador in self.jogadores:
@@ -66,9 +118,11 @@ class Uno(disnake.ui.View):
         
         self.remove_item(self.iniciar_partida)
         await self.comecar_jogo()
+        await inter.response.defer()
         
     @disnake.ui.button(label="Finalizar partida", style=disnake.ButtonStyle.blurple)
     async def finalizar_partida(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
+        await inter.response.defer()
         if inter.user != self.criador_jogo.discord:
             return
         
