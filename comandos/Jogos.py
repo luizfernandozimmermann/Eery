@@ -25,7 +25,7 @@ class Jogos(commands.Cog):
         if self.partida_uno == None:
             mensagem_jogo = await inter.channel.send(embed=disnake.Embed(title="Iniciando partida..."))
             self.partida_uno = Uno(mensagem_jogo, self.bot, inter, self)
-            await self.partida_uno.atualizar_jogo()
+            await self.partida_uno.view.atualizar_jogo()
             await inter.edit_original_message("Jogo criado! Clique em Iniciar partida quando estiver pronto! (Não apague essa mensagem)")
             
         elif not self.partida_uno.iniciado:
