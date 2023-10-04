@@ -18,7 +18,7 @@ class Jogos(commands.Cog):
         embed = view.gerar_embed(inter.author.name)
         await inter.edit_original_message(embed=embed, view=view, file=view.jogo_mapa.gerar_mapa())
 
-    @commands.slash_command(name="uno", description="Inicia uma partida de UNO")
+    @commands.slash_command(name="uno", description="Inicia uma partida de UNO ou entra na partida existente.")
     async def uno_iniciar(self, inter : disnake.ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         

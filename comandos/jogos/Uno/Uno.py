@@ -183,14 +183,14 @@ class Uno():
                         value=f"O próximo jogador irá comprar {self.partida.quantidade_comprar} cartas!"
                     )
                 
-                embed.set_footer(text="Botão 'UNO!' desta mensagem ficará disponível quando algum jogador não falar UNO! antes de jogar a sua penúltima carta.")
+                embed.set_footer(text="Botão 'UNO!' desta mensagem ficará disponível quando algum jogador não falar UNO! antes de jogar a sua penúltima carta. /uno irá reenviar sua mensagem com as suas cartas.")
                 
                 embed.set_image("attachment://image.png")
             
             else:
                 embed.title += f" - Aguardando jogadores {len(self.partida.jogadores)}/10..."
                 embed.description = "Jogadores: " + ", ".join([f"<@{jogador.discord.id}>" for jogador in self.partida.jogadores])
-                embed.set_footer(text="Apenas o criador da partida consegue iniciá-la.")
+                embed.set_footer(text="/uno para entar na partida. Apenas o criador da partida consegue iniciá-la.")
                 
             return embed
             
