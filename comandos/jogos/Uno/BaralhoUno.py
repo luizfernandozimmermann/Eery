@@ -1,10 +1,14 @@
 import random
 
+from disnake import Emoji
+
 from comandos.jogos.Uno.Carta import Carta
+from entidades.EeryType import EeryType
 
 
 class BaralhoUno():
-    def __init__(self):
+    def __init__(self, bot : EeryType):
+        self.bot = bot
         self.cartas : list[Carta] = []
         self.carta_descarte = None
         self.embaralhar()
@@ -13,9 +17,6 @@ class BaralhoUno():
                 self.jogar(carta)
                 self.cartas.remove(carta)
                 break
-        
-    def pegar_mao(self) -> list[Carta]:
-        return [self.pegar_carta() for a in range(0, 7)]
         
     def pegar_carta(self) -> Carta:
         carta = self.cartas[random.randint(0, len(self.cartas) - 1)]
@@ -33,14 +34,26 @@ class BaralhoUno():
             simbolos.append("+2")
             especiais = [ "+4", "multicor"]
             
+            emojis : list[Emoji] = []
+            for guild in self.bot.guilds:
+                for emoji in guild.emojis:
+                    emojis.append(emoji)
+            
             for especial in especiais:
                 for a in range(0, 4):
-                    self.cartas.append(Carta(simbolo=especial))
+                    self.cartas.append(
+                        Carta(simbolo=especial, 
+                            emoji=[emoji for emoji in emojis if 
+                                emoji.name.__contains__(f"especial_{especial.replace('+', 'mais')}")][0])
+                        )
             
             for cor in cores:
                 for simbolo in simbolos:
-                    self.cartas.append(Carta(cor=cor, simbolo=simbolo))
-                    self.cartas.append(Carta(cor=cor, simbolo=simbolo))
+                    emoji = [emoji for emoji in emojis if 
+                                emoji.name.__contains__(f"{cor}_{simbolo.replace('+', 'mais')}")][0]
+                    
+                    self.cartas.append(Carta(cor=cor, simbolo=simbolo, emoji=emoji))
+                    self.cartas.append(Carta(cor=cor, simbolo=simbolo, emoji=emoji))
                  
             if self.carta_descarte != None:
                 self.cartas.remove(self.carta_descarte)

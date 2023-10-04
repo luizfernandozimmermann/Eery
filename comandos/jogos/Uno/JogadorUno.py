@@ -3,6 +3,8 @@ import math
 from typing import Optional
 import disnake
 from PIL import Image
+from disnake.interactions import MessageInteraction
+from disnake.ui.item import Item
 
 from comandos.jogos.Uno.BaralhoUno import BaralhoUno
 from comandos.jogos.Uno.Carta import Carta
@@ -17,26 +19,29 @@ class JogadorUno():
         self.discord = inter.user
         self.bot = bot
         self.mao : list[Carta] = []
+        self.uno = False
         
         self.partida = partida
         
     async def inicio_partida(self, seu_turno : bool):
-        self.mao = self.baralho.pegar_mao()
+        self.mao = self.comprar(3)
         await self.view.inicio_partida(seu_turno)
         
     async def atualizar_status_jogar(self, comprar_ativo : bool):
         await self.view.atualizar_mensagem(seu_turno=True, comprar_ativo=comprar_ativo)
         
     async def jogar(self, carta : Carta):
-        await self.partida.jogar(carta)
         await self.view.atualizar_mensagem(False)
+        await self.partida.jogar(carta)
 
     def comprar(self, quantidade : int) -> Carta | list[Carta]:
+        self.uno = False
         cartas_pegas = []
         for i in range(quantidade):
             carta_pega = self.baralho.pegar_carta()
             cartas_pegas.append(carta_pega)
             self.mao.append(carta_pega)
+        self.mao.sort(key=lambda carta: (not carta.especial, carta.cor, carta.simbolo))
         
         return cartas_pegas[0] if len(cartas_pegas) == 1 else cartas_pegas
 
@@ -47,6 +52,7 @@ class JogadorUno():
             self.jogador : JogadorUno = jogador
             self.bot = bot
             self.inter = inter
+            self.seu_turno = False
             
             # Cartas por linha
             self.cpl = 10
@@ -56,17 +62,33 @@ class JogadorUno():
             for botao in self.botoes:
                 self.remove_item(botao)
         
+        async def on_error(self, error: Exception, item: Item, interaction: MessageInteraction) -> None:
+            await self.atualizar_mensagem(self.seu_turno)
+        
+        async def trocar_mensagem(self, inter : disnake.ApplicationCommandInteraction):
+            self.id
+            self.inter = inter
+            await self.mensagem.delete()
+            self.mensagem = await inter.edit_original_message(
+                embed=self.embed,
+                file=self.gerar_imagem(),
+                view=self
+            )
+
         async def inicio_partida(self, seu_turno : bool):
+            self.remove_item(self.uno)
             if not seu_turno:
                 self.remove_item(self.botao_comprar)
             else:
                 self.atualizar_options(self.jogador.baralho.carta_descarte)
+            
             self.embed = disnake.Embed(
                 title="Sua mão",
                 colour=disnake.Colour.blurple()
             )
             self.embed.set_image("attachment://image.png")
-            await self.inter.edit_original_message(
+            
+            self.mensagem = await self.inter.edit_original_message(
                 content="Seu turno" if seu_turno else "Aguarde seu turno", embed=self.embed, view=self, file=self.gerar_imagem())
         
         def checar_consegue_jogar(self, carta_descarte : Carta, comprar_ativo : bool):
@@ -74,21 +96,34 @@ class JogadorUno():
         
         async def atualizar_mensagem(self, seu_turno : bool, cor_selecao : bool = False, comprar_ativo : bool = False):
             content = "Aguarde seu turno"
+            self.seu_turno = seu_turno
             
             for select in self.selects:
                 self.remove_item(select)
             self.selects = []
             self.remove_item(self.botao_comprar)
+            self.remove_item(self.uno)
             
             if seu_turno:
                 content = "Seu turno"
+                if len(self.jogador.mao) == 2 and self.checar_consegue_jogar(self.jogador.baralho.carta_descarte, comprar_ativo):
+                    if not self.jogador.uno:
+                        self.uno.disabled = False
+                    self.add_item(self.uno)
+                else:
+                    self.remove_item(self.uno)
                 if not cor_selecao:
                     self.add_item(self.botao_comprar)
                     carta_descarte = self.jogador.baralho.carta_descarte
                     self.atualizar_options(carta_descarte, comprar_ativo)
             
-            await self.inter.edit_original_message(
-                content=content, embed=self.embed, view=self, file=self.gerar_imagem())
+            imagem = self.gerar_imagem()
+            if imagem != None:
+                self.mensagem = await self.inter.edit_original_message(
+                    content=content, embed=self.embed, view=self, file=imagem)
+            else:
+                await self.inter.edit_original_message(
+                    content="Parabéns! Suas cartas acabaram!", embed=None, view=self, attachments=None)
                         
         async def select_callback_jogar(self, inter: disnake.MessageInteraction):
             await inter.response.defer()
@@ -105,7 +140,9 @@ class JogadorUno():
                     self.add_item(botao)
                 await self.atualizar_mensagem(True, True)
         
-        def gerar_imagem(self) -> disnake.File:
+        def gerar_imagem(self) -> disnake.File | None:
+            if len(self.jogador.mao) == 0:
+                return None
             pos_x = 0
             pos_y = 0
             imagem_mao = Image.new("RGBA", 
@@ -140,9 +177,7 @@ class JogadorUno():
                             options= [disnake.SelectOption(
                                 label=f"{carta.cor.capitalize()} {carta.simbolo.capitalize()}",
                                 value= f"{carta.cor}_{carta.simbolo}",
-                                emoji=next(
-                                    disnake.utils.get(i.emojis, name=f"{carta.cor}_{carta.simbolo.replace('+', 'mais')}") 
-                                    for i in self.bot.guilds)
+                                emoji=carta.emoji
                             ) for carta in cartas if a * 25 <= cartas.index(carta) < (a + 1) * 25]
                                 )
                     )
@@ -210,8 +245,8 @@ class JogadorUno():
         async def botao_comprar(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
             await inter.response.defer()
             if self.jogador.partida.quantidade_comprar != 0:
-                self.jogador.partida.quantidade_comprar = 0
                 self.jogador.comprar(self.jogador.partida.quantidade_comprar)
+                self.jogador.partida.quantidade_comprar = 0
                 self.jogador.partida.pular_jogador()
                 await self.jogador.partida.atualizar_jogador_atual()
                 await self.atualizar_mensagem(False)
@@ -222,5 +257,13 @@ class JogadorUno():
                 while not self.checar_carta_valida(carta_descarte, carta_pega, False):
                     carta_pega = self.jogador.comprar(1)
 
+                await self.atualizar_mensagem(True)
+                
+        @disnake.ui.button(label="UNO", style=disnake.ButtonStyle.red)
+        async def uno(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
+            await inter.response.defer()
+            if len(self.selects) > 0:
+                self.jogador.uno = True
+                self.uno.disabled = True
                 await self.atualizar_mensagem(True)
                 

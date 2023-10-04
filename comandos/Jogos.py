@@ -29,18 +29,23 @@ class Jogos(commands.Cog):
             await inter.edit_original_message("Jogo criado! Clique em Iniciar partida quando estiver pronto! (Não apague essa mensagem)")
             
         elif not self.partida_uno.iniciado:
-            if len(self.partida_uno.jogadores) == 5:
+            if len(self.partida_uno.jogadores) == 10:
                 await inter.edit_original_message("Máximo de jogadores atingido.")
                 return
             
             if inter.user.id in [jogador.discord.id for jogador in self.partida_uno.jogadores]:
                 await inter.edit_original_message("Esta será sua nova mensagem da partida. (Não apague essa mensagem)")
                 jogador = next((jogador for jogador in self.partida_uno.jogadores if jogador.discord == inter.user))
-                jogador.inter = inter
+                jogador.view.inter = inter
                 return
                 
             await self.partida_uno.adicionar_jogador(inter)
             await inter.edit_original_message("Entrou na partida! Espere o criador do jogo iniciar a partida. (Não apague essa mensagem)")
         
         else:
+            if inter.user.id in [jogador.discord.id for jogador in self.partida_uno.jogadores]:
+                jogador = next((jogador for jogador in self.partida_uno.jogadores if jogador.discord == inter.user))
+                await jogador.view.trocar_mensagem(inter)
+                return
+            
             await inter.edit_original_message("Há uma partida de Uno ocorrendo no momento, favor espere acabar.")

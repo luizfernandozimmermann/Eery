@@ -4,6 +4,12 @@ from random import randint
 import re
 import disnake
 from disnake.ext import commands, tasks
+from comandos.Adm import Adm
+from comandos.Comandos import Comandos
+from comandos.Jogos import Jogos
+from comandos.Perfil import Perfil
+from comandos.Twitch import Twitch
+from comandos.Xp import Xp
 from comandos.xp_funcoes import obter_level
 from save_and_load import carregar
 
@@ -19,7 +25,12 @@ class Eery(commands.Bot):
         self.configs = carregar("configs")
         self.valor_canais_xp = carregar("valor_canais_xp")
         self.remove_command("help")
-        self.load_extensions("comandos")
+        self.add_cog(Adm(self))
+        self.add_cog(Comandos(self))
+        self.add_cog(Jogos(self))
+        self.add_cog(Perfil(self))
+        self.add_cog(Twitch(self))
+        self.add_cog(Xp(self))
        
     @tasks.loop(seconds=59)
     async def loop_1m(self):
