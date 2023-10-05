@@ -24,7 +24,7 @@ class JogadorUno():
         self.partida = partida
         
     async def inicio_partida(self, seu_turno : bool):
-        self.mao = self.comprar(3)
+        self.mao = self.comprar(7)
         await self.view.inicio_partida(seu_turno)
         
     async def atualizar_status_jogar(self, comprar_ativo : bool):
