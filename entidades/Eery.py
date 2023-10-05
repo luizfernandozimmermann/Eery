@@ -108,7 +108,7 @@ class Eery(commands.Bot):
         self.loop.create_task(self.cogs["Twitch"].check_twitch_stream())
 
     async def on_message(self, message : disnake.message.Message):
-        if not message.author.bot:
+        if not message.author.bot and message.guild.id == self.canal_lvl_up.guild.id:
             if self.configs["xp"]["ativo"] and message.author.id not in self.xp_adicionado:
                 usuario = self.usuario_servico.pegar_usuario(message.author)
                 
