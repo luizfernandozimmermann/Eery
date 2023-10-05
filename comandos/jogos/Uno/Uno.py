@@ -226,7 +226,7 @@ class Uno():
         @disnake.ui.button(label="Iniciar partida", style=disnake.ButtonStyle.blurple)
         async def iniciar_partida(self, button : disnake.ui.Button, inter : disnake.ApplicationCommandInteraction):
             await inter.response.defer()
-            if inter.user != self.criador_jogo.discord or len(self.jogadores) < 2:
+            if inter.user != self.partida.criador_jogo.discord or len(self.partida.jogadores) < 2:
                 return
             
             self.remove_item(self.iniciar_partida)
