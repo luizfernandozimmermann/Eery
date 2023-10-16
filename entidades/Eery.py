@@ -11,12 +11,13 @@ from comandos.Perfil import Perfil
 from comandos.Twitch import Twitch
 from comandos.Xp import Xp
 from comandos.xp_funcoes import obter_level
+from entidades.EeryType import EeryType
 from save_and_load import carregar
 
 from servicos.UsuarioServico import UsuarioServico
 
 
-class Eery(commands.Bot):
+class Eery(EeryType):
     def __init__(self, command_prefix : str, intents : disnake.Intents):
         super().__init__(command_prefix=command_prefix, intents=intents)
         self.xp_adicionado = []
@@ -43,7 +44,7 @@ class Eery(commands.Bot):
             hora = 24 + hora
         
         if minuto == 00:
-            aleatorio = randint(0,4)
+            numero_aleatorio = randint(0,4)
             if hora == 7:
                 imagens_link = [
                     "https://cdn.discordapp.com/attachments/1054167826937688067/1055609966997811251/bomdia_1.webp",
@@ -52,7 +53,7 @@ class Eery(commands.Bot):
                     "https://cdn.discordapp.com/attachments/1054167826937688067/1055609968230932620/bomdia_4.jpg",
                     "https://cdn.discordapp.com/attachments/1054167826937688067/1055609966804860948/bomdia_5.jpg"
                 ]
-                await self.channel_geral.send("Bom dia!!!\n" + imagens_link[aleatorio])
+                await self.channel_geral.send(f"[Bom dia!!!]({imagens_link[numero_aleatorio]})")
             
             elif hora == 13:
                 imagens_link = [
@@ -62,7 +63,7 @@ class Eery(commands.Bot):
                     "https://i0.wp.com/emotioncard.com.br/wp-content/uploads/2017/07/179.jpg?w=632&ssl=1",
                     "https://i0.wp.com/emotioncard.com.br/wp-content/uploads/2017/07/2016-Abril-28-Boa-tarde-IMG-2.jpg?w=720&ssl=1"
                 ]
-                await self.channel_geral.send("Boa tarde!\n" + imagens_link[aleatorio])
+                await self.channel_geral.send(f"[Boa tarde!]({imagens_link[numero_aleatorio]})")
 
             elif hora == 19:
                 imagens_link = [
@@ -72,9 +73,9 @@ class Eery(commands.Bot):
                     "https://i.pinimg.com/564x/12/d1/cc/12d1cc49b307e23f6cab2d9bd07bd670.jpg",
                     "https://i0.wp.com/amaluz.com.br/wp-content/uploads/2021/12/Boa-noite-Nada-e-dificil-quando-temos-fe-em-Deus-e-na-vida.jpg?w=700&ssl=1"
                 ]
-                await self.channel_geral.send("Boa noite!!!\n" + imagens_link[aleatorio])
+                await self.channel_geral.send(f"[Boa noite!!!]({imagens_link[numero_aleatorio]})")
 
-            elif hora == 8:
+            elif hora == 0:
                 dia = datetime.now(timezone.utc)
                 mes = '%02d' % dia.month
                 dia = '%02d' % dia.day
@@ -83,6 +84,11 @@ class Eery(commands.Bot):
                     if usuario.aniversario == dia + "/" + mes:
                         await self.channel_geral.send("<@" + usuario.id + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
                         break
+
+            elif hora == 1:
+                online = len([usuario for usuario in self.usuario_servico.pegar_todos_usuarios() if usuario.status != disnake.Status.online])
+                if online >= self.channel_geral.guild.member_count // 2:
+                    await self.channel_geral.send(file="[BORA DORMIR CAMBADA](https://imgb.ifunny.co/videos/576571deca32576c87db6b09e14f2b893d2b28818cff93c17826a9590dd5cf34_1.mp4)")
 
     async def on_slash_command_error(self, interaction : disnake.ApplicationCommandInteraction, 
                                     exception : commands.CommandError):
