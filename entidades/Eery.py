@@ -82,12 +82,12 @@ class Eery(EeryType):
                 usuarios = self.usuario_servico.pegar_todos_usuarios()
                 for usuario in usuarios:
                     if usuario.aniversario == dia + "/" + mes:
-                        await self.channel_geral.send("<@" + usuario.id + "> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
+                        await self.channel_geral.send(f"<@{usuario.id}> FELIZ ANIVERSÁRIO!!!\nhttps://media.discordapp.net/attachments/842921629054271518/1050245621954641950/happy_birthday.mp4")
                         break
 
             elif hora == 1:
                 online = len([usuario for usuario in self.usuario_servico.pegar_todos_usuarios() if usuario.status != disnake.Status.online])
-                if online >= self.channel_geral.guild.member_count // 2:
+                if online >= self.channel_geral.guild.member_count // 10:
                     await self.channel_geral.send(file="[BORA DORMIR CAMBADA](https://imgb.ifunny.co/videos/576571deca32576c87db6b09e14f2b893d2b28818cff93c17826a9590dd5cf34_1.mp4)")
 
     async def on_slash_command_error(self, interaction : disnake.ApplicationCommandInteraction, 
